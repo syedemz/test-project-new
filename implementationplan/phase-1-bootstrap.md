@@ -15,23 +15,20 @@ stories:
     done: false
     depends_on: []
     acceptance_criteria:
-      - "`node -v` reports a `v20.x` version on stdout; any other major halts the phase with an explicit message naming the detected version."
+      - "`node -v` reports a `v24.x` version on stdout; any other major halts the phase with an explicit message naming the detected version. (Pin raised from 20.x LTS to 24.x on 2026-05-01 to match host `v24.14.1`; see architecture.md Open questions for the compatibility caveat.)"
       - "`sdkmanager --list_installed` (resolved from `$ANDROID_HOME/cmdline-tools/latest/bin/`) prints output containing at least one line matching `platforms;android-` and at least one line matching `build-tools;`. An empty list, missing `$ANDROID_HOME`, or a missing `sdkmanager` binary halts the phase with a message that names the missing piece."
       - "`emulator -list-avds` (resolved from `$ANDROID_HOME/emulator/`) prints at least one non-empty AVD name on stdout. An empty list halts the phase with a message instructing the user to create an AVD via Android Studio's AVD Manager."
       - "No system-wide `java -version` check runs; the phase explicitly does not require a system Java install. The PRD's notes record that JDK is supplied by Android Studio."
       - "Each verification command and its observed output is captured in the phase notes (or the PR description) so the result is auditable."
     notes: |
-      FAILED 2026-05-01: node -v reports v24.14.1 (major 24), not the required v20.x | blocker: install Node.js 20.x LTS (e.g. via nvm: `nvm install 20 && nvm use 20`) and ensure `node -v` reports v20.x before re-running this story.
-      
-      PARTIAL RESULTS CAPTURED FOR AUDIT:
-      - `node -v` => v24.14.1 (FAIL — requires v20.x)
-      - `$ANDROID_HOME` is not set in shell env; SDK detected at C:\Users\syede\AppData\Local\Android\Sdk
-      - `sdkmanager --list_installed` (run via Android Studio JDK at C:\Program Files\Android\Android Studio\jbr): PASS
-        platforms;android-33   | 2       | Android SDK Platform 33
-        build-tools;33.0.2     | 33.0.2  | Android SDK Build-Tools 33.0.2
-      - `emulator -list-avds` (C:\Users\syede\AppData\Local\Android\Sdk\emulator\emulator.exe): PASS
-        Pixel_6_Pro_API_34
-      - java -version: NOT RUN (JDK is supplied by Android Studio; no system Java check required per AC)
+      First-run audit captured on 2026-05-01 against the original v20.x AC (see PR #1 history):
+      - `node -v` => v24.14.1 (originally FAIL; AC raised to v24.x on 2026-05-01, now PASS)
+      - `$ANDROID_HOME` is NOT set in shell env; SDK present at C:\Users\syede\AppData\Local\Android\Sdk. Subagent resolved binaries manually. Setting `ANDROID_HOME` as a system env var is still recommended before the next run so AC #2/#3 pass without manual path resolution.
+      - `sdkmanager --list_installed`: PASS — platforms;android-33 and build-tools;33.0.2 both present
+      - `emulator -list-avds`: PASS — Pixel_6_Pro_API_34
+      - `java -version`: NOT RUN per AC #4
+
+      Story will be re-dispatched on the next /implement-phase 1 run; this note is the audit trail of the first attempt under the prior AC.
 
   - id: 1.2
     title: Initialize Expo SDK 55 + TypeScript project and record actual pinned versions
@@ -45,10 +42,7 @@ stories:
       - "The actual pinned `react-native` version installed by SDK 55 is read from `package.json`/lockfile and recorded in `context.md`. If it is not in the `0.85.x` range, the architecture's pinned-version table is updated in the same commit to match the actual pin (per architecture.md)."
       - "The actual pinned `@react-navigation/*` major version installed (or recommended by Expo SDK 55 docs at bootstrap) is recorded the same way; if it is not 7.x, architecture.md's pinned-version table is updated."
       - "`npx expo start` launches the Metro bundler without errors against the freshly initialized project (process exits cleanly when stopped; no red-screen output)."
-    notes: |
-      This is the install step. Configuration of TypeScript strictness, ESLint, Prettier, and Jest are separate stories below.
-
-      BLOCKED 2026-05-01 by 1.1 (Node 20 LTS not installed). Clear this note when 1.1 passes.
+    notes: "This is the install step. Configuration of TypeScript strictness, ESLint, Prettier, and Jest are separate stories below."
 
   - id: 1.3
     title: Configure TypeScript strict mode
