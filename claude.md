@@ -22,8 +22,9 @@
 - `C:\Users\syede\Claude-Master\gitbranching.md` — git branching strategy (skeleton, filled out later)
 - `C:\Users\syede\Claude-Master\contextmanagement.md` — protocol for context updates and `/clear` after each feature
 
-<!-- ## Workspace lessons applied
-     (Populate this section only if the user opted in during /start-project. Otherwise omit it.) -->
+## Workspace lessons applied
+
+- **Branch naming belongs to the subagent, not the dispatcher.** When `/implement-phase <n>` dispatches a story, the main agent's brief MUST NOT specify a branch name. The subagent reads `gitbranching.md` at dispatch and derives the name from its rules (one branch per phase: `feat/phase-<n>-<short>`). Reference the rule by name in the brief; never dictate. Reason: in this project's first phase 1 dispatch (2026-05-01), the dispatcher dictated a per-story branch name (`feat/phase-1-1.1-verify-prereqs`), the subagent obeyed the explicit instruction over the rule, and the per-phase-branch convention was violated. Recorded in `C:\Users\syede\Claude-Master\lessons.md`.
 
 ## Workflow
 
