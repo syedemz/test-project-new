@@ -45,7 +45,10 @@ stories:
       - "The actual pinned `react-native` version installed by SDK 55 is read from `package.json`/lockfile and recorded in `context.md`. If it is not in the `0.85.x` range, the architecture's pinned-version table is updated in the same commit to match the actual pin (per architecture.md)."
       - "The actual pinned `@react-navigation/*` major version installed (or recommended by Expo SDK 55 docs at bootstrap) is recorded the same way; if it is not 7.x, architecture.md's pinned-version table is updated."
       - "`npx expo start` launches the Metro bundler without errors against the freshly initialized project (process exits cleanly when stopped; no red-screen output)."
-    notes: "This is the install step. Configuration of TypeScript strictness, ESLint, Prettier, and Jest are separate stories below."
+    notes: |
+      This is the install step. Configuration of TypeScript strictness, ESLint, Prettier, and Jest are separate stories below.
+
+      BLOCKED 2026-05-01 by 1.1 (Node 20 LTS not installed). Clear this note when 1.1 passes.
 
   - id: 1.3
     title: Configure TypeScript strict mode
