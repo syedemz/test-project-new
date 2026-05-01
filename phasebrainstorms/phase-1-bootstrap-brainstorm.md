@@ -1,0 +1,124 @@
+# Phase 1 brainstorm — Project bootstrap
+
+## 2026-05-01 21:24 brainstorm
+
+Per-phase critique of `implementationplan/phase-1-bootstrap.md` ahead of dispatch.
+Findings grouped by: (A) blockers — fix the PRD or the env before dispatch, (B)
+gaps in acceptance criteria — testable but underspecified, (C) drift risks —
+assumptions baked into the PRD that may have shifted, (D) bookkeeping that's
+stale.
+
+### A. Blockers (recommend address before dispatch)
+
+1. **Story 1.2 AC #5 has no non-interactive verification path.**
+   `npx expo start` is a long-running, foreground-by-default Metro server. The
+   AC says "launches without errors … process exits cleanly when stopped; no
+   red-screen output," but it does not say *how* the subagent verifies that
+   non-interactively. Without a contract, the subagent will improvise — risk:
+   it hangs the bash shell, kills the wrong PID, or declares success based on
+   stdout it never read. Concrete fix in the PRD: spawn with a timeout
+   (e.g. `timeout 30 npx expo start --non-interactive` or run in background and
+   poll for the "Metro waiting on" / "Logs for your project" line, then SIGTERM
+   and assert exit was clean). Without this the story will produce ambiguous
+   results.
+
+2. **Story 1.6 AC #5 is unreachable without `collectCoverageFrom`.**
+   The "simulate threshold violation by adding an untested helper file" AC only
+   fires if Jest is configured to *include that file in the coverage scope*.
+   Out of the box, `jest-expo` only counts files imported by tests. So an
+   orphan untested helper would not lower coverage and would not trip the
+   global threshold — the AC will silently pass even if the threshold config
+   is wrong. Fix: add an AC requiring `collectCoverageFrom` to include
+   `**/*.{ts,tsx}` (with the usual excludes) so coverage scope is the whole
+   source tree, which is also how thresholds are intended to be used. Then the
+   simulated violation actually exercises the threshold.
+
+### B. Gaps in acceptance criteria
+
+3. **Story 1.2 cross-doc edit not flagged in the brief.**
+   AC #3 and #4 say *"if the actual pin is not in the expected range, update
+   architecture.md's pinned-version table in the same commit."* That's a
+   cross-document edit the dispatch brief must call out explicitly, otherwise
+   the subagent will edit only `package.json` / `context.md` and leave
+   architecture.md drifted. Recommend the dispatcher add a one-line reminder
+   in the brief: "if pins differ, update architecture.md's pinned-version
+   table in the same commit per the AC."
+
+4. **Story 1.7 folder casing is inconsistent (`Helper/` capitalized, others
+   lowercase).** Probably intentional per architecture.md, but the subagent
+   will not know that without checking. The PRD should either confirm casing
+   in the AC ("`Helper/` is intentionally capitalized to match
+   architecture.md") or normalize. Low-impact but produces avoidable churn if
+   it gets "fixed" later.
+
+### C. Drift risks (assumptions that may have shifted)
+
+5. **Expo SDK 55 + Node 24 compatibility is still untested.**
+   The architecture.md raised the Node pin from 20.x LTS to 24.x on 2026-05-01
+   to match the host (`v24.14.1`). Expo SDK 55 was originally evaluated
+   against Node 20. If `npx create-expo-app` or the installer fails at story
+   1.2, suspect Node first. The PRD does not document a fallback. Suggest the
+   brief tells the subagent: "if 1.2 fails on Node-related errors, do not
+   downgrade Node yourself — fail the story with a clear note and stop, so the
+   user can decide whether to revert the Node pin." This protects the host
+   environment from surprise downgrades.
+
+6. **`@testing-library/jest-native` is deprecated upstream.**
+   Story 1.6 AC #1 mandates installing `@testing-library/jest-native`. As of
+   recent React Native Testing Library releases, those matchers are built into
+   `@testing-library/react-native` itself and the standalone `jest-native`
+   package is on a deprecation path. Depending on which RTL version `jest-expo`
+   pulls in for SDK 55, installing `jest-native` may produce a deprecation
+   warning or be redundant. Not a blocker — the install will still work — but
+   worth noting so the subagent does not chase the warning as a bug. PRD
+   could be relaxed to "install `@testing-library/react-native`; install
+   `@testing-library/jest-native` only if RTL's bundled matchers are not yet
+   available."
+
+7. **`react-native` 0.85.x and `@react-navigation/*` 7.x are expectations,
+   not facts.** Story 1.2 AC #3/#4 explicitly anticipate the actual pins may
+   differ and require updating architecture.md to match. Good — the PRD
+   already handles drift correctly here. Flagging only because the subagent
+   should expect this branch to fire.
+
+### D. Stale bookkeeping (clean up before or alongside the next dispatch)
+
+8. **`context.md` "Active blockers" still says ANDROID_HOME is unset.**
+   Verified in this session: `ANDROID_HOME=C:\Users\syede\AppData\Local\Android\Sdk`
+   is now set at Windows User scope and is visible to the bash subshell.
+   `ANDROID_SDK_ROOT` remains unset (architecture.md never required it; it's
+   the older SDK env var name and either works for Android tooling). Recommend
+   clearing the blocker entry from `context.md` before re-dispatch so it does
+   not falsely re-fire as a halt condition for story 1.1. The subagent
+   inheriting a fresh shell from this Claude Code instance will see
+   ANDROID_HOME, but a brand-new terminal opened by the user later would also
+   see it (User-scope env vars are persistent).
+
+9. **Story 1.1 first-attempt notes are now historical.**
+   The story's `notes:` block documents the 2026-05-01 first attempt against
+   the old Node 20.x AC. Once the re-dispatch closes the story, the notes
+   should be preserved as audit trail (don't delete) but the closing entry
+   should make clear which run satisfied which AC.
+
+### depends_on review
+
+10. **No issues with the dependency graph.**
+    1.1 → ∅; 1.2 → {1.1}; 1.3, 1.4, 1.5, 1.6, 1.7 each → {1.2}. Siblings under
+    1.2 are independent, which is correct — they touch different config
+    surfaces. Per engineeringprinciples.md the executor will still run them
+    serially. No parallelism implied or possible.
+
+### Scope smuggling
+
+11. **None detected.** Phase 1 is bootstrap-only — no app code, no theme, no
+    navigation, no auth. Stories stay inside that scope. The folder scaffold
+    in 1.7 contains only `.gitkeep`, which is correct (population is phases 2
+    and 3).
+
+### Summary recommendation
+
+Three items rise to the level of "address before re-dispatch": **1**
+(non-interactive verification for `expo start`), **2** (collectCoverageFrom
+for Jest), and **8** (clear the stale ANDROID_HOME blocker in context.md).
+Everything else is informational and can ride along, with the brief reminding
+the subagent of items 3, 5, and 6 inline.
