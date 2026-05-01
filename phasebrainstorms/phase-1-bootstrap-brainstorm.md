@@ -122,3 +122,95 @@ Three items rise to the level of "address before re-dispatch": **1**
 for Jest), and **8** (clear the stale ANDROID_HOME blocker in context.md).
 Everything else is informational and can ride along, with the brief reminding
 the subagent of items 3, 5, and 6 inline.
+
+## 2026-05-01 21:35 brainstorm
+
+Re-run after the PRD revision was committed to `development`. Verifying gap
+closure and surfacing second-order issues.
+
+### Closure check (prior items)
+
+- **A1 — non-interactive Metro contract on 1.2 AC #5:** closed. Lines 52 of
+  the PRD now spell out background launch, 60s poll for "Metro waiting on" or
+  equivalent, clean SIGTERM, and an audit excerpt requirement.
+- **A2 — `collectCoverageFrom` AC on 1.6:** closed. New AC #3 requires whole
+  source tree coverage scope with the right excludes; AC #6 explicitly notes
+  it now proves both threshold and scope configs.
+- **A8 — stale ANDROID_HOME blocker:** closed. `context.md` Active blockers
+  reads "None." Verified `$ANDROID_HOME` is visible to bash. Story 1.1's hard
+  failure path will not falsely fire.
+- **B3 — cross-doc edit reminder on 1.2:** closed. Notes call it out
+  explicitly, including "do not split this across commits."
+- **B4 — folder casing on 1.7:** closed. AC and notes both say casing must
+  not be normalized.
+- **C5 — Node 24 fallback on 1.2:** closed. Notes forbid the subagent from
+  downgrading Node and require failing loudly instead.
+- **C6 — `@testing-library/jest-native` deprecation:** closed. AC #1 made it
+  conditional on RTL bundling.
+
+All seven prior items resolved. No reopens.
+
+### New finding (one real, one second-order)
+
+12. **Story 1.6 AC #5 conflicts with the new collectCoverageFrom AC + strict
+    thresholds (real, blocking-class).**
+    Once `collectCoverageFrom: ['**/*.{ts,tsx}']` is set AND the global
+    thresholds are `{ lines: 80, branches: 75, functions: 80, statements: 80 }`,
+    the *baseline* run `npm test -- --coverage` (AC #5) will FAIL because the
+    Expo SDK 55 TypeScript template ships an untested `App.tsx` (and possibly
+    additional template files) that land inside the coverage scope at 0%
+    coverage. AC #5 says the baseline run must exit 0, but it cannot — the
+    threshold check kills it before AC #6 (the deliberate violation) is even
+    simulated.
+
+    Three resolution options, in increasing order of intrusiveness:
+    - (a) Add a phase-1-only exclusion to `collectCoverageFrom` for the
+      template entry file (`!App.tsx`, `!app/**`, or whatever SDK 55's
+      template scaffolds). Document in the AC that this exclusion is removed
+      in phase 2 once real source files arrive.
+    - (b) Move strict-threshold *enforcement* to phase 2. Phase 1 keeps the
+      threshold config for documentation but runs without `--coverage` in the
+      smoke check, or sets `coverageThreshold` to `0` for the bootstrap
+      commit and ratchets up in phase 2.
+    - (c) Have story 1.2 replace the template's `App.tsx` with a placeholder
+      that has 100% statement coverage from the smoke test (e.g., the smoke
+      test imports it and asserts a single export). Smuggles a tiny bit of
+      app-shape into phase 1 but keeps the threshold enforcement honest.
+
+    Recommend (a) — explicit, contained, easy to remove in phase 2.
+    Recommend AGAINST proceeding to dispatch with this gap open: the
+    subagent will hit it during 1.6 and either fail the story or
+    silently work around it in a way that isn't recorded.
+
+13. **Windows process-tree shutdown for Metro (second-order, brief-level).**
+    The new 1.2 AC #5 says SIGTERM with no orphaned children. On
+    Windows/git-bash, a plain `kill <pid>` does not always terminate the full
+    Metro process tree — node workers and the file watcher commonly survive.
+    The subagent will need `taskkill //T //F //PID <pid>` (note the doubled
+    slashes inside git-bash to avoid path-translation) or `kill -- -<pgid>`
+    if the process was launched in its own group. This is a Windows-specific
+    operational wrinkle, not a PRD-level gap. Recommend the dispatch brief
+    include a one-line reminder: "on Windows, kill the Metro process tree
+    explicitly (taskkill //T //F //PID), not just the parent."
+
+### Brief-level reminders (no PRD edits required)
+
+- **Preserve story 1.1's historical `notes:` block on re-run.** The block is
+  marked "audit trail of the first attempt." The subagent should APPEND a new
+  closing entry for the successful re-run, not overwrite. Mention this in the
+  1.1 dispatch brief.
+- **Cross-doc edit alert (1.2).** Already in the PRD notes, but the
+  dispatcher should echo it once in the brief — easy to miss when reading
+  many ACs.
+- **Node-related failure path (1.2).** Already in the PRD notes; same
+  reasoning.
+- **`@testing-library/jest-native` decision recording (1.6).** AC #1 says
+  the install/skip decision is recorded in the phase notes — remind the
+  subagent so it doesn't end up in PR description only.
+
+### Summary recommendation
+
+One item warrants a PRD edit before dispatch: **#12** (the threshold/coverage
+conflict in 1.6). The remaining items (#13 + brief reminders) can be conveyed
+inline in the dispatch briefs. Without resolving #12, story 1.6 is set up to
+fail in a confusing way.

@@ -10,6 +10,16 @@ brainstorm_revision: |
     matchers cover the same surface.
   - 1.7 notes confirm that the `Helper/` casing is intentional.
 
+  2026-05-01 21:35 — second revision against the same brainstorm file (re-run section):
+  - 1.6 gained a phase-1-only exclude AC for Expo template files (App.tsx, index.ts*,
+    app/**) so the baseline `npm test -- --coverage` can actually exit 0 against the
+    fresh template; AC #6 (simulated violation) tightened to require the temp file
+    sit OUTSIDE the phase-1 excludes so the threshold check actually fires; cleanup
+    contract added to 1.6 notes for phase 2 to remove the carve-out.
+  - 1.2 notes extended with a Windows process-tree shutdown reminder for Metro
+    (taskkill //T //F //PID, not plain kill).
+  - 1.1 notes extended with a re-run preservation rule (append, never overwrite).
+
 context_summary: |
   Stand up the empty Expo SDK 55 + TypeScript project, verify host prerequisites
   programmatically before any code is written, and configure the lint/format/test
@@ -38,6 +48,8 @@ stories:
 
       Story will be re-dispatched on the next /implement-phase 1 run; this note is the audit trail of the first attempt under the prior AC.
 
+      Re-run preservation: when the re-dispatch completes, APPEND a new audit entry below this block (e.g., "Re-run YYYY-MM-DD: <observed outputs>"). Do NOT delete, rewrite, or fold the historical first-attempt block above — it documents the original AC and the reason the AC was amended, and that history must remain visible.
+
   - id: 1.2
     title: Initialize Expo SDK 55 + TypeScript project and record actual pinned versions
     agent: frontenddeveloper
@@ -56,6 +68,8 @@ stories:
       Cross-doc edit: AC #3 and AC #4 require updating architecture.md's pinned-version table in the SAME commit if the actual installed `react-native` version is outside `0.85.x` or the actual installed `@react-navigation/*` major is not `7.x`. Do not split this across commits — the PRD, lockfile, and architecture.md must move together.
 
       Node 24 fallback: if `npx create-expo-app` or any subsequent install/bundler step fails with errors that point to Node version incompatibility (engine warnings, ESM/CJS interop crashes inside Expo's CLI, native module post-install failures), STOP the story with a clear failure note and surface the error to the user. Do NOT downgrade Node (`nvm`, version manager, or otherwise) on the user's host — the Node 24 pin is recorded in architecture.md as an open compatibility question and the user decides whether to revert to Node 20 LTS.
+
+      Windows process-tree shutdown for Metro (AC #5 wrinkle): a plain `kill <pid>` from git-bash on Windows does NOT reliably terminate Metro's full process tree — node workers and the file watcher are commonly orphaned because Windows lacks proper SIGTERM tree semantics for native processes. Use `taskkill //T //F //PID <pid>` (doubled slashes inside git-bash so the path is not translated to `C:\T`), OR launch Metro in its own process group and signal the group (`kill -- -<pgid>`). The "no orphaned child processes" clause of AC #5 must actually hold — verify with a follow-up `ps` or `tasklist` that no `node` processes from this Metro instance remain.
 
   - id: 1.3
     title: Configure TypeScript strict mode
@@ -105,11 +119,19 @@ stories:
       - "Jest is configured via the Expo Jest preset (`jest-expo`); `@testing-library/react-native` is installed. `@testing-library/jest-native` is installed ONLY if the version of `@testing-library/react-native` pulled in by Expo SDK 55 does not already provide built-in matchers — if RTL ships the matchers natively, `jest-native` is skipped (it is on a deprecation path upstream) and the decision is recorded in the phase notes."
       - "`jest.config.js` (or `package.json` Jest block) sets `coverageThreshold.global` to `{ lines: 80, branches: 75, functions: 80, statements: 80 }` exactly as specified in architecture.md."
       - "`jest.config.js` (or `package.json` Jest block) sets `collectCoverageFrom` to include the entire source tree (e.g., `['**/*.{ts,tsx}']` with excludes for `node_modules`, `.expo`, `__tests__`, `coverage`, and any `*.config.{js,ts}` files). This is required so the global coverage thresholds apply to all source files, not only those imported by tests — without it, the threshold-violation AC below is unreachable."
+      - "`collectCoverageFrom` ALSO includes a phase-1-only exclude block for any source files shipped by the Expo SDK 55 template that have no tests yet — typically `App.tsx`, `index.ts`/`index.tsx`, and any files under `app/` if the template uses Expo Router. Without this carve-out, the strict global thresholds (lines 80, branches 75, functions 80, statements 80) would fail the BASELINE coverage run (`npm test -- --coverage` must exit 0) because the template ships untested code at >0 LOC. The exact list of template files actually excluded (whatever SDK 55 ships at bootstrap time — verify by inspecting the freshly initialized project) is recorded in the phase notes. This carve-out is explicitly TEMPORARY: phase 2's first story is responsible for removing the phase-1-only excludes once real source files and accompanying tests arrive (cleanup contract recorded in this story's `notes` and to be propagated into the phase 2 PRD)."
       - "A trivial smoke test (e.g., `__tests__/smoke.test.ts` asserting `expect(1 + 1).toBe(2)`) exists and passes."
       - "`npm test -- --coverage` exits 0, prints a coverage table, and the smoke test appears in the run."
-      - "A coverage-threshold violation, simulated by temporarily adding an untested helper file (containing executable code, located somewhere matched by `collectCoverageFrom`), causes `npm test -- --coverage` to exit non-zero with a threshold-violation diagnostic; the file is removed before the story is closed. Verifying that this AC fails as expected proves both the threshold config AND the `collectCoverageFrom` config are wired correctly."
+      - "A coverage-threshold violation, simulated by temporarily adding an untested helper file (containing executable code, located in a path that IS matched by `collectCoverageFrom`'s include patterns AND is NOT in either the standard tooling excludes or the phase-1-only template-exclude block — e.g., a new top-level `coverage-probe.ts` at the project root, NOT under `app/` and NOT a sibling of `App.tsx`), causes `npm test -- --coverage` to exit non-zero with a threshold-violation diagnostic; the file is removed before the story is closed. Verifying that this AC fails as expected proves the threshold config, the `collectCoverageFrom` include patterns, AND the exclude blocks are all wired correctly."
       - "An npm script `test` runs `jest`; a script `test:coverage` runs `jest --coverage`."
-    notes: "TDD is enforced in later phases. Phase 1 only proves the harness runs."
+    notes: |
+      TDD is enforced in later phases. Phase 1 only proves the harness runs.
+
+      Phase-1-only template-exclude cleanup contract: the phase-1-only exclude block added to `collectCoverageFrom` (the AC immediately following the base `collectCoverageFrom` AC) is a temporary carve-out for Expo SDK 55's untested template files (App.tsx, index.ts*, app/**, or whatever the actual template ships). It exists ONLY because phase 1 cannot reasonably write app-level tests for code that phase 2 will replace. The contract is:
+        1. The exact list of excluded template files is recorded in this story's PR description and in `context.md` Recent changes when 1.6 closes.
+        2. Phase 2's first story REMOVES these excludes from `collectCoverageFrom` and either deletes the template files or replaces them with code that has accompanying tests.
+        3. The phase 2 PRD must reference this contract — the dispatcher of phase 2 should propagate this requirement into phase 2's first story when the phase 2 PRD is written.
+      Without this cleanup, the phase-1 carve-out becomes permanent dead code in the Jest config and silently lowers the project's effective coverage scope.
 
   - id: 1.7
     title: Scaffold project folder structure with .gitkeep placeholders
