@@ -4,7 +4,7 @@
 <1-2 sentences. Auto-populate from architecture.md after /create-plan, or user fills now.>
 
 ## Current phase
-Phase 1 — Project bootstrap (in progress). Stories 1.1, 1.2, and 1.3 complete. Next: story 1.4 (ESLint config).
+Phase 1 — Project bootstrap (in progress). Stories 1.1, 1.2, 1.3, and 1.4 complete. Next: story 1.5 (Prettier config).
 
 ## Active blockers
 - None. (`$ANDROID_HOME` was set at Windows User scope to `C:\Users\syede\AppData\Local\Android\Sdk` on 2026-05-01 and is now visible to the bash subshell — verified before the phase 1 re-dispatch. `$ANDROID_SDK_ROOT` remains unset; not required by architecture.md or the phase 1 PRD.)
@@ -22,3 +22,4 @@ Phase 1 — Project bootstrap (in progress). Stories 1.1, 1.2, and 1.3 complete.
 - 2026-05-03: story 1.1 re-run complete — all ACs passed: node v24.14.1 (v24.x AC), sdkmanager.bat listed platforms;android-33 and build-tools;33.0.2, emulator listed Pixel_6_Pro_API_34, no system java -version run; story marked done: true
 - 2026-05-03: story 1.2 complete — Expo SDK 55 TypeScript project initialized (temp+copy approach); `npx expo --version` = 55.0.27; `npm view expo version` = 55.0.19; actual react-native installed by SDK 55 = 0.83.6 (NOT 0.85.x — architecture.md pinned-version table updated in same commit); @react-navigation/* target 7.x confirmed compatible (latest stable 7.2.2, compatible with React 19.2.0 + RN 0.83.6, no architecture update needed); Metro CI-mode verified: "Waiting on http://localhost:8081" within 60s, no errors, process tree terminated via taskkill //T //F, no orphaned node processes; story marked done: true
 - 2026-05-03: story 1.3 complete — tsconfig.json updated to explicitly list all 8 strict-mode flags (strict + noImplicitAny, strictNullChecks, strictFunctionTypes, noImplicitThis, alwaysStrict, strictBindCallApply, strictPropertyInitialization); `npx tsc --noEmit` exited 0 on clean project; TS2322 deliberately triggered and confirmed; story marked done: true
+- 2026-05-03: story 1.4 complete — .eslintrc.js created with extends ['expo', 'plugin:@typescript-eslint/recommended'] + manual tsdoc plugin registration (tsdoc/syntax: warn — no 'recommended' preset exists in eslint-plugin-tsdoc@0.5.2); eslint@8.57.1 installed (ESLint 9 incompatible with eslint-config-expo legacy format); `npx eslint .` exited 0; violation probe triggered exit 1; `lint` script added to package.json; story marked done: true

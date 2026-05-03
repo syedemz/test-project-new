@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03 (story 1.3 complete)
+last_updated: 2026-05-03 (story 1.4 complete)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -126,7 +126,7 @@ stories:
   - id: 1.4
     title: Configure ESLint with eslint-plugin-tsdoc
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.2
     acceptance_criteria:
@@ -134,7 +134,38 @@ stories:
       - "`npx eslint .` exits 0 against the freshly initialized project."
       - "A deliberate violation (e.g., an unused variable or an invalid TSDoc comment) introduced into a temporary file causes `npx eslint .` to exit non-zero; the file is removed before the story is closed."
       - "An npm script `lint` is registered in `package.json` that runs `eslint .`."
-    notes: ""
+    notes: |
+      Audit — run 2026-05-03:
+
+      ESLint version: eslint@8.57.1 installed (downgraded from 9.x). ESLint 9 was
+      initially installed but uses flat config by default, and eslint-config-expo@55.0.0
+      exports a legacy .eslintrc-format object — requiring ESLINT_USE_FLAT_CONFIG=false
+      or migration. ESLint 8 was installed instead for native .eslintrc.js support.
+
+      Expo config name: 'expo' (the canonical name for eslint-config-expo in extends).
+      The package name is `eslint-config-expo`, and the extends value is `'expo'` per
+      ESLint's convention of stripping the `eslint-config-` prefix.
+
+      @typescript-eslint/recommended: extends includes 'plugin:@typescript-eslint/recommended'.
+      The eslint-config-expo TypeScript overrides use the @typescript-eslint plugin but do
+      NOT themselves extend plugin:@typescript-eslint/recommended — so the explicit entry in
+      extends is necessary and not redundant.
+
+      tsdoc/recommended: eslint-plugin-tsdoc@0.5.2 exports NO configs object (confirmed
+      via `node -e "console.log(Object.keys(require('eslint-plugin-tsdoc').configs || {}))"` 
+      which returns an empty array). There is no 'recommended' preset — the plugin only
+      ships the 'tsdoc/syntax' rule. DEVIATION from AC #1 literal string: manual
+      registration used instead: plugins: ['tsdoc'], rules: { 'tsdoc/syntax': 'warn' }.
+      TSDoc lint coverage intent is fully satisfied — the rule is active and verified.
+
+      AC #1 PASS: .eslintrc.js exists at project root. Extends ['expo', 'plugin:@typescript-eslint/recommended'].
+      tsdoc plugin registered manually with tsdoc/syntax: warn (deviation documented above).
+      AC #2 PASS: `npx eslint .` exited 0 on clean project (no output, exit code 0).
+      AC #3 PASS: _eslint_violation_probe.ts with `const _deliberatelyUnused = 42;` caused
+      exit 1 with diagnostic `@typescript-eslint/no-unused-vars: '_deliberatelyUnused' is
+      assigned a value but never used`. File removed; follow-up `npx eslint .` exited 0.
+      AC #4 PASS: `lint` script added to package.json: `"lint": "eslint ."`.
+      `npm run lint` exited 0.
 
   - id: 1.5
     title: Configure Prettier
