@@ -214,3 +214,135 @@ One item warrants a PRD edit before dispatch: **#12** (the threshold/coverage
 conflict in 1.6). The remaining items (#13 + brief reminders) can be conveyed
 inline in the dispatch briefs. Without resolving #12, story 1.6 is set up to
 fail in a confusing way.
+
+## 2026-05-01 21:44 brainstorm
+
+Third pass after PRD's second revision (`brainstorm_revision` block, lines
+4–22 of the PRD). Verifying closure of prior items 1–13, doing a fresh-eyes
+sweep for anything the first two sessions missed, and validating the repo
+state ahead of dispatch.
+
+### Closure check (prior 13 items)
+
+All seven items from session 1 plus items 12 and 13 from session 2 remain
+closed. Quick re-verification:
+
+- 12 (1.6 threshold-vs-baseline conflict) — resolved via the phase-1-only
+  template-exclude AC (PRD lines 122–125) plus AC #6 requiring the violation
+  probe to sit OUTSIDE the carve-out. Cleanup contract for phase 2 is in
+  notes (PRD lines 130–134). Closed.
+- 13 (Windows process-tree shutdown) — surfaced into 1.2 notes as a Windows
+  taskkill reminder. Closed.
+
+Repo state verified: PR #1 (`feat/phase-1-1.1-verify-prereqs`) is MERGED;
+local + remote have only `main` and `development`. No orphaned phase-1
+branch, so the next dispatch creates a clean phase branch.
+
+### New findings (this pass)
+
+14. **Phase-branch continuity across sibling stories — brief-level, real.**
+    Stories 1.3–1.7 are siblings under 1.2. Per `gitbranching.md`, the rule
+    is **one branch per phase** (`feat/phase-1-<short>`). The lesson recorded
+    in `CLAUDE.md` (and in `lessons.md` from PR #1) prohibits the dispatcher
+    from dictating a branch *name* — that's the subagent's job. But the
+    dispatcher MUST tell stories 1.3 and onward that **a phase branch
+    already exists from a prior story in this same phase** so the new
+    subagent does `git checkout feat/phase-1-<short>` instead of creating a
+    new branch. Without this signal, a fresh subagent reading
+    `gitbranching.md` and following the rule by-the-book might create
+    `feat/phase-1-bootstrap` once for 1.1 and a second time for 1.3, getting
+    confused when the branch already exists, or worse: silently branching
+    off main.
+
+    Resolution: each dispatch brief from story 1.3 onward includes the
+    sentence "the phase-1 branch already exists from prior stories in this
+    phase; check it out before working." Do NOT name the branch — instruct
+    the subagent to discover it via `git branch --list 'feat/phase-1-*'`.
+
+15. **Expo SDK 55 pin mechanism not specified in 1.2 — real, AC #1.**
+    PRD AC #1 of 1.2: "An Expo project is initialized in the project root
+    using the Expo SDK 55 TypeScript template; `package.json` declares
+    `expo` at SDK 55." The AC says *what* must be true after init but does
+    not specify *how* the subagent pins to SDK 55. `npx create-expo-app`
+    by default uses whatever the latest released SDK is — if that's 56 or
+    53 at the moment of dispatch, AC #1 immediately fails and the subagent
+    has no documented fallback path. The right invocation is one of:
+    - `npx create-expo-app@latest --template blank-typescript@sdk-55`
+    - Initialize, then `npx expo install expo@^55` and re-resolve the
+      template files.
+
+    Recommend the dispatch brief for 1.2 include: "to satisfy AC #1, pin
+    the template to SDK 55 explicitly via the `@sdk-55` template tag (or
+    equivalent). If the SDK 55 template tag is not published, fail the
+    story loudly and surface the issue — do not silently scaffold a
+    different SDK." This is a brief-level reminder, not a PRD edit; the AC
+    itself is correct.
+
+16. **`plugin:tsdoc/recommended` may not be a valid extends target — real,
+    1.4 AC #1.** `eslint-plugin-tsdoc` traditionally exposes a plugin to
+    register and a single rule (`tsdoc/syntax`) to enable; it has not
+    historically shipped a `recommended` config preset. If the literal
+    string `plugin:tsdoc/recommended` is passed to ESLint's `extends:` and
+    the plugin doesn't define one, ESLint exits non-zero with
+    "Cannot find module 'eslint-config-tsdoc'..." or similar. AC #2
+    (`npx eslint . exits 0`) then fails for the wrong reason.
+
+    Resolution: the dispatch brief for 1.4 instructs the subagent to verify
+    the plugin's actual exports first. If `recommended` exists, use it. If
+    not, register the plugin and enable the rule manually
+    (`plugins: ['tsdoc']`, `rules: { 'tsdoc/syntax': 'warn' }`), and record
+    the deviation in the phase notes. The PRD's intent (TSDoc lint
+    coverage) is satisfied either way; the literal string is the
+    implementation detail. Brief-level reminder.
+
+17. **`sdkmanager` invocation on Windows/git-bash — informational.**
+    The first-attempt notes show the subagent worked around the `.bat`
+    extension issue by resolving the binary manually from
+    `$ANDROID_HOME/cmdline-tools/latest/bin/`. Now that `$ANDROID_HOME`
+    is set, the bash subshell still won't auto-append `.bat` for native
+    Windows binaries. The subagent will likely either (a) call
+    `sdkmanager.bat` explicitly, (b) `cd` into the bin directory, or
+    (c) add `.bat` to `PATHEXT` in the shell. All work; none need a PRD
+    change. Informational.
+
+18. **`CI=1` env var as canonical non-interactive Expo CLI — informational.**
+    1.2 AC #5 already permits "or wrapped in a timeout" + background
+    spawn + SIGTERM. Worth noting in the brief that `CI=1 npx expo start`
+    is the documented Expo CLI flag for non-interactive mode (suppresses
+    prompts, prints status without TUI). Combined with backgrounding +
+    polling, this is the cleanest implementation. Optional brief reminder.
+
+### Brief-level reminder summary (carry forward into dispatch)
+
+- 1.1 — preserve historical notes block; APPEND a new audit entry for the
+  successful re-run, do not overwrite (already in PRD line 51).
+- 1.2 — pin to SDK 55 explicitly via template tag (item 15 above);
+  cross-doc edit if pins differ (PRD line 68); Node-fallback policy
+  (PRD line 70); Windows taskkill for Metro process tree (PRD line 72);
+  optionally suggest `CI=1` (item 18).
+- 1.3+ — phase branch already exists from a prior story; check it out,
+  do not create a new one. Discover via `git branch --list 'feat/phase-1-*'`
+  rather than hardcoding the name (item 14).
+- 1.4 — verify `eslint-plugin-tsdoc` exports `recommended` before relying
+  on it; fall back to manual rule registration if not (item 16).
+- 1.6 — record the `@testing-library/jest-native` install/skip decision in
+  phase notes per AC #1 (existing PRD requirement); record the exact list
+  of phase-1-only template excludes per AC #4.
+
+### depends_on review
+
+No changes from prior reviews. Graph remains 1.1 → ∅; 1.2 → {1.1};
+1.3, 1.4, 1.5, 1.6, 1.7 each → {1.2}. All siblings are independent and run
+serially per the engineering rule.
+
+### Scope smuggling
+
+None detected. PRD remains bootstrap-only.
+
+### Summary recommendation
+
+No PRD edits required. All five new findings (14–18) are brief-level
+reminders that the dispatcher carries into each story's dispatch. Item 14
+(phase-branch continuity) is the most important — it directly mitigates a
+repeat of the PR #1 lesson if the dispatcher and subagents drift on branch
+discipline.
