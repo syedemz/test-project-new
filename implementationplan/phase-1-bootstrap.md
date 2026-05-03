@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-01
+last_updated: 2026-05-03
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -30,7 +30,7 @@ stories:
   - id: 1.1
     title: Verify host prerequisites programmatically
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`node -v` reports a `v24.x` version on stdout; any other major halts the phase with an explicit message naming the detected version. (Pin raised from 20.x LTS to 24.x on 2026-05-01 to match host `v24.14.1`; see architecture.md Open questions for the compatibility caveat.)"
@@ -49,6 +49,21 @@ stories:
       Story will be re-dispatched on the next /implement-phase 1 run; this note is the audit trail of the first attempt under the prior AC.
 
       Re-run preservation: when the re-dispatch completes, APPEND a new audit entry below this block (e.g., "Re-run YYYY-MM-DD: <observed outputs>"). Do NOT delete, rewrite, or fold the historical first-attempt block above — it documents the original AC and the reason the AC was amended, and that history must remain visible.
+
+      Re-run audit captured on 2026-05-03 against the amended v24.x AC:
+      - `node -v` => v24.14.1 — PASS (v24.x AC satisfied)
+      - `$ANDROID_HOME` = C:\Users\syede\AppData\Local\Android\Sdk — resolved from env, present and accessible
+      - `sdkmanager.bat --list_installed` (resolved from $ANDROID_HOME/cmdline-tools/latest/bin/): PASS
+        Output included: platforms;android-33 (v2) and build-tools;33.0.2 (v33.0.2). Full installed list:
+        build-tools;33.0.2, cmdline-tools;latest, emulator, extras;google;Android_Emulator_Hypervisor_Driver,
+        patcher;v4, platform-tools, platforms;android-33, platforms;android-33-ext4, sources;android-33,
+        system-images;android-31;google_apis;x86_64, system-images;android-31;google_apis_playstore;x86_64,
+        system-images;android-33;google_apis;x86_64, system-images;android-34;google_apis;x86_64
+        Note: sdkmanager.bat requires JAVA_HOME; Android Studio's bundled JBR at
+        C:\Program Files\Android\Android Studio\jbr was used. No system-wide `java -version` was run.
+      - `emulator -list-avds` (resolved from $ANDROID_HOME/emulator/): PASS — Pixel_6_Pro_API_34
+      - `java -version`: NOT RUN per AC #4. JDK supplied by Android Studio's bundled JBR only.
+      All ACs passed. Story marked done: true.
 
   - id: 1.2
     title: Initialize Expo SDK 55 + TypeScript project and record actual pinned versions
