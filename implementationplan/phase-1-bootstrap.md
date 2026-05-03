@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03
+last_updated: 2026-05-03 (story 1.2 complete)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -68,7 +68,7 @@ stories:
   - id: 1.2
     title: Initialize Expo SDK 55 + TypeScript project and record actual pinned versions
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.1
     acceptance_criteria:
@@ -85,6 +85,26 @@ stories:
       Node 24 fallback: if `npx create-expo-app` or any subsequent install/bundler step fails with errors that point to Node version incompatibility (engine warnings, ESM/CJS interop crashes inside Expo's CLI, native module post-install failures), STOP the story with a clear failure note and surface the error to the user. Do NOT downgrade Node (`nvm`, version manager, or otherwise) on the user's host — the Node 24 pin is recorded in architecture.md as an open compatibility question and the user decides whether to revert to Node 20 LTS.
 
       Windows process-tree shutdown for Metro (AC #5 wrinkle): a plain `kill <pid>` from git-bash on Windows does NOT reliably terminate Metro's full process tree — node workers and the file watcher are commonly orphaned because Windows lacks proper SIGTERM tree semantics for native processes. Use `taskkill //T //F //PID <pid>` (doubled slashes inside git-bash so the path is not translated to `C:\T`), OR launch Metro in its own process group and signal the group (`kill -- -<pgid>`). The "no orphaned child processes" clause of AC #5 must actually hold — verify with a follow-up `ps` or `tasklist` that no `node` processes from this Metro instance remain.
+
+      Audit — run 2026-05-03:
+      - Init approach: temp+copy. `create-expo-app` does not support scaffolding into a non-empty directory without --force equivalent. Scaffolded into `C:/Users/syede/AppData/Local/Temp/expo-scaffold/myapp` with `--no-install`, then copied Expo files (App.tsx, index.ts, tsconfig.json, app.json, assets/, .gitignore) into project root, preserving all bookkeeping files (CLAUDE.md, claude.md, context.md, architecture.md, codingprinciples.md, cicd.md, implementationplan.md, implementationplan/, phasebrainstorms/, .git/). package.json created with correct name (test-project-new) and Expo SDK 55 deps. `npm install` then run in project root.
+      - `npx expo --version` = 55.0.27
+      - `npm view expo version` = 55.0.19
+      - Actual react-native installed = 0.83.6 (package.json + lockfile; NOT in 0.85.x range — architecture.md pinned-version table updated in this commit per AC #3)
+      - @react-navigation/* target: 7.x confirmed (latest stable 7.2.2, peer dep react >= 18.2.0 satisfied by React 19.2.0 in template; not in Expo's bundledNativeModules.json — user installs separately; architecture 7.x target stands, no update needed per AC #4)
+      - Node 24 compatibility: install succeeded with only deprecation warnings for transitive packages (inflight, rimraf, glob, uuid). No ESM/CJS crashes, no engine errors. Node 24 is compatible with Expo SDK 55 for the install step.
+      - Metro non-interactive verification command: `CI=1 npx expo start > /tmp/metro-out.txt 2>&1 &`
+      - Metro stdout excerpt (full output):
+          Starting project at C:\Users\syede\Claude-Master\test-project-new
+          Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+          Starting Metro Bundler
+
+          Waiting on http://localhost:8081
+          Logs for your project will appear below.
+      - Bundler-ready signal: "Waiting on http://localhost:8081" (appeared within ~5s, well within 60s window)
+      - No "error" or red-screen lines in stdout.
+      - Shutdown: `taskkill //T //F //PID 32744` and `taskkill //T //F //PID 5436` — full process tree (including parent PID 28192) terminated. Post-kill `tasklist //FI "IMAGENAME eq node.exe"` confirmed no remaining node.exe processes.
+      - All 5 ACs passed. Story marked done: true.
 
   - id: 1.3
     title: Configure TypeScript strict mode
