@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03 (story 1.2 complete)
+last_updated: 2026-05-03 (story 1.3 complete)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -109,14 +109,19 @@ stories:
   - id: 1.3
     title: Configure TypeScript strict mode
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.2
     acceptance_criteria:
       - "`tsconfig.json` extends Expo's TypeScript base and sets `compilerOptions.strict: true` along with `noImplicitAny`, `strictNullChecks`, `strictFunctionTypes`, `noImplicitThis`, `alwaysStrict`, `strictBindCallApply`, and `strictPropertyInitialization` (all true)."
       - "`npx tsc --noEmit` exits 0 against the freshly initialized project."
       - "A deliberate type error introduced into a temporary file (e.g., `const x: number = \"a\";`) causes `npx tsc --noEmit` to exit non-zero with a `TS2322` diagnostic; the file is removed before the story is closed."
-    notes: ""
+    notes: |
+      Audit — run 2026-05-03:
+      - tsconfig.json diff: `extends` stays "expo/tsconfig.base"; `compilerOptions.strict: true` already present from template; added seven companion flags: noImplicitAny, strictNullChecks, strictFunctionTypes, noImplicitThis, alwaysStrict, strictBindCallApply, strictPropertyInitialization (all true). Note: expo/tsconfig.base already implies these via strict:true, but they are now explicitly listed so future readers see the contract.
+      - AC #1 PASS: tsconfig.json has all 8 flags (strict + 7 companions) explicitly under compilerOptions; still extends expo/tsconfig.base.
+      - AC #2 PASS: `npx tsc --noEmit` exited 0 with no output on clean project.
+      - AC #3 PASS: temp file `_type_error_probe.ts` with `const x: number = "a";` introduced; `npx tsc --noEmit` exited 2 with diagnostic `_type_error_probe.ts(1,7): error TS2322: Type 'string' is not assignable to type 'number'.`; file removed; follow-up `npx tsc --noEmit` exited 0 confirming clean state.
 
   - id: 1.4
     title: Configure ESLint with eslint-plugin-tsdoc
