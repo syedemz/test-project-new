@@ -4,7 +4,7 @@
 <1-2 sentences. Auto-populate from architecture.md after /create-plan, or user fills now.>
 
 ## Current phase
-Not yet started. Awaiting `architecture.md` and `/create-plan`.
+Phase 1 — Project bootstrap (in progress). Stories 1.1 and 1.2 complete. Next: story 1.3 (TypeScript strict mode config).
 
 ## Active blockers
 - None. (`$ANDROID_HOME` was set at Windows User scope to `C:\Users\syede\AppData\Local\Android\Sdk` on 2026-05-01 and is now visible to the bash subshell — verified before the phase 1 re-dispatch. `$ANDROID_SDK_ROOT` remains unset; not required by architecture.md or the phase 1 PRD.)
@@ -20,3 +20,4 @@ Not yet started. Awaiting `architecture.md` and `/create-plan`.
 - 2026-05-01: `$ANDROID_HOME` set at Windows User scope to `C:\Users\syede\AppData\Local\Android\Sdk` and verified visible to the bash subshell — clears the prior active blocker for story 1.1
 - 2026-05-01: phase 1 PRD revised against `phasebrainstorms/phase-1-bootstrap-brainstorm.md` — non-interactive Metro verification contract on 1.2 AC #5, `collectCoverageFrom` AC added to 1.6, `@testing-library/jest-native` made conditional on RTL bundling, folder-casing intent recorded on 1.7, cross-doc and Node-fallback notes added to 1.2
 - 2026-05-03: story 1.1 re-run complete — all ACs passed: node v24.14.1 (v24.x AC), sdkmanager.bat listed platforms;android-33 and build-tools;33.0.2, emulator listed Pixel_6_Pro_API_34, no system java -version run; story marked done: true
+- 2026-05-03: story 1.2 complete — Expo SDK 55 TypeScript project initialized (temp+copy approach); `npx expo --version` = 55.0.27; `npm view expo version` = 55.0.19; actual react-native installed by SDK 55 = 0.83.6 (NOT 0.85.x — architecture.md pinned-version table updated in same commit); @react-navigation/* target 7.x confirmed compatible (latest stable 7.2.2, compatible with React 19.2.0 + RN 0.83.6, no architecture update needed); Metro CI-mode verified: "Waiting on http://localhost:8081" within 60s, no errors, process tree terminated via taskkill //T //F, no orphaned node processes; story marked done: true

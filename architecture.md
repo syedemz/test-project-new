@@ -137,17 +137,17 @@ Validation lives in a helper (`Helper/validationHelper.ts`) and returns a typed 
 
 | Component              | Language / framework                        | Pinned version                                        |
 | ---------------------- | ------------------------------------------- | ----------------------------------------------------- |
-| Mobile app             | TypeScript (strict mode)                    | `5.4.x`                                               |
-| Mobile app             | React Native                                | **defer to Expo SDK 55's pinned RN; target `0.85.x`** |
-| Mobile app             | Expo SDK                                    | `55`                                                  |
-| Navigation             | React Navigation                            | latest stable major at bootstrap (target `7.x`)       |
-| Local persistence      | `@react-native-async-storage/async-storage` | latest compatible with Expo SDK 55                    |
-| Testing                | Jest + React Native Testing Library         | latest compatible with RN actually pinned by Expo 55  |
+| Mobile app             | TypeScript (strict mode)                    | `5.9.x` (updated: Expo SDK 55 template ships `~5.9.2`) |
+| Mobile app             | React Native                                | **`0.83.6`** (actual Expo SDK 55 pin; was target `0.85.x` — updated 2026-05-03 per story 1.2 AC #3) |
+| Mobile app             | Expo SDK                                    | `55` (installed `~55.0.19`)                           |
+| Navigation             | React Navigation                            | `7.x` (target confirmed; latest stable `7.2.2` compatible with RN 0.83.6 + React 19.2.0) |
+| Local persistence      | `@react-native-async-storage/async-storage` | `2.2.0` (Expo SDK 55 bundled pin)                     |
+| Testing                | Jest + React Native Testing Library         | latest compatible with RN 0.83.6 pinned by Expo 55    |
 | Lint / format          | ESLint, `eslint-plugin-tsdoc`, Prettier     | latest                                                |
 | Node (dev environment) | Node.js                                     | `24.x` (verified `v24.14.1` on host)                  |
 | JDK (Android build)    | Java (bundled with Android Studio)          | whatever ships with the installed Android Studio      |
 
-**Version-pin policy:** Expo SDK 55 pins a specific RN minor version. If that pin is not 0.85.x, **defer to Expo's pin** rather than forcing 0.85.x — fighting Expo's pinned RN creates toolchain breakage. Same logic for React Navigation: target 7.x but accept whatever stable major Expo SDK 55's docs recommend at bootstrap. Phase 1 contains an explicit verify-and-record step (see below) that captures the actual versions installed.
+**Version-pin policy:** Expo SDK 55 pins RN at `0.83.6` (not 0.85.x as originally targeted). Architecture updated 2026-05-03 per story 1.2 AC #3 to match the actual installed pin — fighting Expo's pinned RN creates toolchain breakage. Same logic for React Navigation: target 7.x confirmed at bootstrap (latest stable 7.2.2, compatible with React 19.2.0). Phase 1 recorded the actual versions installed.
 
 Language and styling discipline is governed by `codingprinciples.md`.
 
