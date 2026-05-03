@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03 (story 1.6 complete)
+last_updated: 2026-05-03 (story 1.7 complete — phase 1 done)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -329,7 +329,7 @@ stories:
   - id: 1.7
     title: Scaffold project folder structure with .gitkeep placeholders
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.2
     acceptance_criteria:
@@ -339,3 +339,18 @@ stories:
       - "`git status` after the story shows the four `.gitkeep` files as the only additions in those folders."
     notes: |
       The mixed casing (`Helper/` capitalized, others lowercase) is deliberate and matches architecture.md's folder-structure spec. If a reviewer flags it as inconsistent, the answer is "intentional, see architecture.md" — do not silently rename in this phase.
+
+      Audit — run 2026-05-03:
+      Directories created: styles/, labels/, Helper/, navigation/ (all at project root).
+      .gitkeep paths tracked by git (exact casing from git ls-files):
+        Helper/.gitkeep    — capital H, matches architecture.md spec
+        labels/.gitkeep    — lowercase l, correct
+        navigation/.gitkeep — lowercase n, correct
+        styles/.gitkeep    — lowercase s, correct
+      No case-normalization workaround needed — git on Windows (with this repo's config) preserved
+      the capital H on first creation. `git ls-files | grep -E '(styles|labels|Helper|navigation)'`
+      confirmed exact casing in the index before commit.
+      No source files (.ts, .tsx, .json) exist in any of the four folders — confirmed via find with no output.
+      `git status` showed exactly four new-file additions (Helper/.gitkeep, labels/.gitkeep,
+      navigation/.gitkeep, styles/.gitkeep) and nothing else in those directories.
+      All 4 ACs passed. Story marked done: true.
