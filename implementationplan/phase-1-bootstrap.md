@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03 (story 1.4 complete)
+last_updated: 2026-05-03 (story 1.5 complete)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -170,7 +170,7 @@ stories:
   - id: 1.5
     title: Configure Prettier
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.2
     acceptance_criteria:
@@ -178,7 +178,43 @@ stories:
       - "`.prettierignore` excludes `node_modules`, `.expo`, `android`, `ios`, and lockfiles."
       - "`npx prettier --check .` exits 0 against the freshly initialized project."
       - "An npm script `format` is registered in `package.json` that runs `prettier --write .`, and a script `format:check` runs `prettier --check .`."
-    notes: ""
+    notes: |
+      Audit — run 2026-05-03:
+
+      Packages installed: prettier@3.8.3 (devDependency), eslint-config-prettier@10.1.8 (devDependency).
+
+      .prettierrc settings:
+        singleQuote: true   — aligns with template files (App.tsx, index.ts use single quotes)
+        trailingComma: "all" — trailing commas on all multi-line constructs (args, params, generics)
+        printWidth: 100     — wider than default 80; suits React Native component JSX which runs long
+        semi: true          — explicit semicolons
+
+      .prettierignore contents:
+        node_modules
+        .expo
+        android
+        ios
+        package-lock.json
+        yarn.lock
+        *.md                — markdown excluded (project docs only; Prettier reformats prose unpredictably)
+
+      Normalization approach: `npx prettier --check .` initially flagged 13 markdown files (.md) as
+      unformatted. Since all markdown in this project is project documentation (not application code),
+      `*.md` was added to .prettierignore rather than running --write to reformat the docs.
+      The all TypeScript/TSX/JSON/JS source files were already consistent with the chosen settings —
+      `npm run format` confirmed all code files were `(unchanged)`. No normalization commit required.
+
+      eslint-config-prettier integration: `eslint-config-prettier` was installed and `'prettier'` added
+      as the FINAL entry in .eslintrc.js extends array. This disables any ESLint formatting rules that
+      conflict with Prettier, preventing false positives. `npx eslint .` continues to exit 0.
+      This is out-of-scope per the PRD's AC but documented here per the compatibility note in the
+      dispatch brief. The integration is a net quality improvement with zero risk.
+
+      AC #1 PASS: .prettierrc exists at project root with singleQuote, trailingComma, printWidth, semi.
+      AC #2 PASS: .prettierignore lists node_modules, .expo, android, ios, package-lock.json, yarn.lock.
+      AC #3 PASS: `npx prettier --check .` exited 0 — "All matched files use Prettier code style!"
+      AC #4 PASS: `format` script runs `prettier --write .`; `format:check` runs `prettier --check .`.
+               Both scripts verified via `npm run format` (exit 0) and `npm run format:check` (exit 0).
 
   - id: 1.6
     title: Configure Jest + React Native Testing Library with coverage thresholds
