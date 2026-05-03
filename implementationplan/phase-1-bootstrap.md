@@ -1,6 +1,6 @@
 phase: 1
 title: Project bootstrap
-last_updated: 2026-05-03 (story 1.5 complete)
+last_updated: 2026-05-03 (story 1.6 complete)
 brainstorm_revision: |
   2026-05-01 21:24 — PRD revised against phasebrainstorms/phase-1-bootstrap-brainstorm.md:
   - 1.2 AC #5 rewritten with a non-interactive Metro verification contract.
@@ -219,7 +219,7 @@ stories:
   - id: 1.6
     title: Configure Jest + React Native Testing Library with coverage thresholds
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 1.2
     acceptance_criteria:
@@ -239,6 +239,92 @@ stories:
         2. Phase 2's first story REMOVES these excludes from `collectCoverageFrom` and either deletes the template files or replaces them with code that has accompanying tests.
         3. The phase 2 PRD must reference this contract — the dispatcher of phase 2 should propagate this requirement into phase 2's first story when the phase 2 PRD is written.
       Without this cleanup, the phase-1 carve-out becomes permanent dead code in the Jest config and silently lowers the project's effective coverage scope.
+
+      Audit — run 2026-05-03:
+
+      Packages installed:
+        - jest@29.7.0 (devDependency) — jest core; jest-expo is a preset wrapper that
+          requires jest core installed separately. jest-expo@55.0.16 bundles @jest/globals@^29
+          but not jest itself.
+        - jest-expo@55.0.16 (devDependency) — Expo SDK 55 Jest preset.
+        - @testing-library/react-native@13.3.3 (devDependency) — installed via
+          `npm install --save-dev @testing-library/react-native@13.3.3 react-test-renderer@19.2.0
+          --legacy-peer-deps`. --legacy-peer-deps needed because npm tried to resolve
+          react-test-renderer@19.2.5 (mismatching react@19.2.0 peer).
+        - react-test-renderer@19.2.0 (devDependency) — required peer for RTL.
+
+      RTL jest-native decision (AC #1):
+        Installed RTL version: 13.3.3
+        Built-in matchers confirmed: `node_modules/@testing-library/react-native/build/matchers/`
+        contains `to-have-text-content.js`, `to-be-on-the-screen.js`, and the full matcher suite.
+        `matchers.js` at the package root re-exports `./build/matchers`. Matchers are natively
+        bundled in RTL 13.3.3 (available since RTL 12.4+).
+        DECISION: @testing-library/jest-native is SKIPPED. It is on a deprecation path upstream
+        and RTL 13.3.3 provides all the same matchers natively.
+
+      Template files present in project root (SDK 55 bootstrap):
+        - App.tsx  (has executable code: a React component with JSX)
+        - index.ts (has executable code: registerRootComponent call)
+        No `app/` directory — template did not use Expo Router.
+
+      Exact collectCoverageFrom array (verbatim from jest.config.js):
+        [
+          '**/*.{ts,tsx}',
+          '!**/node_modules/**',
+          '!**/.expo/**',
+          '!**/__tests__/**',
+          '!**/coverage/**',
+          '!*.config.{js,ts}',
+          '!**/*.config.{js,ts}',
+          '!App.tsx',        <-- phase-1-only template exclude
+          '!index.ts',       <-- phase-1-only template exclude
+        ]
+
+      Baseline npm test -- --coverage (exit 0 — AC #6):
+        PASS __tests__/smoke.test.ts
+          smoke
+            √ basic arithmetic works (2 ms)
+        ---------|---------|----------|---------|---------|---
+        File     | % Stmts | % Branch | % Funcs | % Lines |
+        ---------|---------|----------|---------|---------|---
+        All files|       0 |        0 |       0 |       0 |
+        ---------|---------|----------|---------|---------|---
+        Test Suites: 1 passed, 1 total
+        Tests:       1 passed, 1 total
+        Exit code: 0
+        (All files row shows 0s because all source files are excluded by the phase-1
+        carve-out — no files remain in coverage scope, so no threshold violation fires.)
+
+      Violation probe (AC #7):
+        File: coverage-probe.ts at project root (NOT under app/, NOT named App.tsx)
+        Contents: exported function `absoluteValue(n: number): number` with an if/else branch.
+        Location matches collectCoverageFrom include `**/*.{ts,tsx}` and is NOT in any exclude.
+        npm test -- --coverage with probe present: exit code 1.
+        Threshold-violation diagnostics observed:
+          Jest: "global" coverage threshold for statements (80%) not met: 0%
+          Jest: "global" coverage threshold for branches (75%) not met: 0%
+          Jest: "global" coverage threshold for lines (80%) not met: 0%
+          Jest: "global" coverage threshold for functions (80%) not met: 0%
+        Probe file removed. Post-removal npm test -- --coverage: exit code 0 (confirmed).
+
+      Phase-2 cleanup contract (restated for phase 2 dispatcher):
+        jest.config.js lines '!App.tsx' and '!index.ts' in collectCoverageFrom are TEMPORARY
+        phase-1-only excludes. Phase 2's first story is responsible for:
+          1. Removing '!App.tsx' and '!index.ts' from collectCoverageFrom in jest.config.js.
+          2. Either replacing those template files with tested source code, or deleting them.
+        This must be captured in phase 2's first story's acceptance criteria.
+
+      AC #1 PASS: jest-expo preset configured; RTL 13.3.3 installed with built-in matchers;
+                  jest-native skipped (decision recorded above).
+      AC #2 PASS: coverageThreshold.global = { lines: 80, branches: 75, functions: 80, statements: 80 }.
+      AC #3 PASS: collectCoverageFrom includes **/*.{ts,tsx} with standard tooling excludes.
+      AC #4 PASS: collectCoverageFrom includes '!App.tsx' and '!index.ts' (exact SDK 55 template
+                  files); no app/ directory in template; cleanup contract recorded.
+      AC #5 PASS: __tests__/smoke.test.ts exists; `expect(1 + 1).toBe(2)` passes.
+      AC #6 PASS: npm test -- --coverage exits 0; coverage table printed; smoke test appears.
+      AC #7 PASS: coverage-probe.ts at root triggered exit 1 with all 4 threshold diagnostics;
+                  file removed; baseline re-confirmed exit 0.
+      AC #8 PASS: `test` script runs jest; `test:coverage` script runs jest --coverage.
 
   - id: 1.7
     title: Scaffold project folder structure with .gitkeep placeholders
