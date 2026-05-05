@@ -24,7 +24,7 @@ stories:
   - id: 2.0
     title: Prep — install AsyncStorage, set up src/ root, retire phase 1.7 placeholder folders
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`@react-native-async-storage/async-storage` installed via `npx expo install @react-native-async-storage/async-storage` (Expo's compatibility-checked install — NOT plain `npm install`). The package appears in `package.json` `dependencies` and is locked in `package-lock.json`."

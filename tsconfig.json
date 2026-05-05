@@ -8,6 +8,10 @@
     "noImplicitThis": true,
     "alwaysStrict": true,
     "strictBindCallApply": true,
-    "strictPropertyInitialization": true
+    "strictPropertyInitialization": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   }
 }

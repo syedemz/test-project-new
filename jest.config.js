@@ -1,6 +1,12 @@
 const config = {
   preset: 'jest-expo',
 
+  // Resolve @/* path alias to src/* so Jest can process imports that use the
+  // same alias configured in tsconfig.json and babel.config.js.
+  moduleNameMapper: {
+    '^@/(.*)$': '<rootDir>/src/$1',
+  },
+
   // Collect coverage from the entire source tree
   collectCoverageFrom: [
     '**/*.{ts,tsx}',
@@ -13,11 +19,11 @@ const config = {
     '!*.config.{js,ts}',
     '!**/*.config.{js,ts}',
 
-    // Phase-1-only template-exclude block (TEMPORARY)
+    // Phase-1-only template-exclude block (DEFERRED — do NOT remove in phase 2)
     // These are the Expo SDK 55 template files shipped at project bootstrap time.
     // They have no tests yet because phase 1 only proves the tooling harness runs.
-    // CONTRACT: phase 2's first story MUST remove these excludes and either delete
-    // the template files or replace them with tested source code.
+    // CONTRACT: phase 3 (app shell) MUST remove these excludes when ThemeProvider
+    // and font loading are wired into App.tsx.
     '!App.tsx',
     '!index.ts',
   ],
