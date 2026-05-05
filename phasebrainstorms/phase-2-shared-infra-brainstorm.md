@@ -139,3 +139,28 @@ The 8-story PRD is materially sound. Two edits would tighten it:
 2. **Story 2.7 Leg B:** if 2.0 keeps the exclude, no additional change. If 2.0 removes it, Leg B must add a smoke test for the restored bare `App.tsx`.
 
 Both are tightening edits, not blocking ones. The PRD is `proceed`-able as-is, with the agent expected to make a sensible call on the alias and coverage details. But cleaner to address before dispatch.
+
+## 2026-05-05 third-pass sanity check
+
+Re-reviewed the amended PRD (uncommitted edits to `implementationplan/phase-2-shared-infra.md`) against `jest.config.js`, `tsconfig.json`, `package.json`, and the absence of `babel.config.js` / `metro.config.js`.
+
+### Resolved since 21:25 brainstorm
+
+- ✅ Story 2.0 now has explicit ACs for runtime alias resolution via `babel-plugin-module-resolver` (preferred) or `metro.config.js` `resolver.alias` (alternative) — closes the prior HIGH gap on Metro not reading `tsconfig.json` `paths`.
+- ✅ End-to-end alias verification probe (TS + Babel + Jest) is mandated and explicitly removed before commit — proves runtime resolution before any real source file depends on it.
+- ✅ Jest exclude deferral to phase 3 is documented in story 2.0 ACs and `notes:`, with required edit to the `jest.config.js` comment block (`CONTRACT: phase 3 …`). Closes the phase-1 contract amendment cleanly without colliding with story 2.7's `App.tsx` churn.
+- ✅ `tsconfig.json` `baseUrl: "."` is explicitly named in the AC — agent cannot omit it.
+
+### New observations (all LOW)
+
+- **`babel.config.js` does not exist yet.** Phase 1 did not create one; SDK 55's default `babel-preset-expo` is implicit. Story 2.0 will need to CREATE `babel.config.js` (with `presets: ['babel-preset-expo']` + `plugins: [['module-resolver', {alias: {'@': './src'}}]]`). Not a blocker — well within scope of the AC — just flag for the dispatching brief so the agent doesn't go looking for an existing file to edit.
+- **Uncommitted spec edits on `development`.** `phase-2-shared-infra.md` and the brainstorm file have unstaged modifications. They are spec edits, not implementation, and should be committed to `development` directly BEFORE the subagent cuts `feat/phase-2-shared-infra` — otherwise they ride into the feature branch and mix spec with implementation in the eventual PR. Recommend the user commit them now (or tell the dispatcher to commit them on `development` before delegating story 2.0).
+- **Brand context still undefined for `labels.json` English copy** (carried from prior brainstorm). `theme.md` says "Muslim singles dating & social app"; `architecture.md` describes a generic auth flow; the actual English strings for `app_name`, `landing_screen_title`, etc. are unspecified. Story 2.2's AC requires keys + non-empty `en` values but does not constrain the COPY itself. Agent will write something generic. Acceptable for phase 2; revisit after branding lands.
+
+### Dispatch order (unchanged from 21:25)
+
+`2.0 → {2.1, 2.2, 2.3, 2.4, 2.5} → 2.6 → 2.7`. Strictly serial per `engineeringprinciples.md`. Story 2.7 includes a manual user checkpoint between Leg A and Leg B.
+
+### Net recommendation
+
+**Proceed.** The PRD is dispatch-ready. One housekeeping ask before story 2.0 is dispatched: commit the uncommitted spec edits to `development` so the phase 2 feature branch contains implementation only.
