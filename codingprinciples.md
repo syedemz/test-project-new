@@ -20,16 +20,18 @@ The rules in this file have been checked for conflicts with the workspace `engin
 
 ### Styling
 
-- Use **React Native `StyleSheet`** (no inline `style={{ ... }}` objects, no third-party styling libraries).
-- **All styles live in a single shared file**: `styles/styles.ts`. This file exports a single `StyleSheet.create({...})` object containing every style used across the app.
-- Components import the styles object and reference styles by key:
-  ```ts
-  import styles from '../styles/styles';
-  // ...
-  <View style={styles.container}>
-  ```
-- Rationale: any visual change (color, spacing, typography) is made in exactly one place and propagates app-wide.
-- Color values, font sizes, and spacing constants are defined as named `const` exports at the top of `styles.ts` and reused inside the StyleSheet — never inline literals like `#ff0000` or `16` scattered through styles.
+The full design system — color palette, semantic color roles, typography, spacing, radii, shadows, light/dark theming, and the canonical component pattern — lives in **`theme.md`** at the project root. `theme.md` is authoritative. The rules below summarize the project-wide invariants that derive from it; if anything in this section appears to conflict with `theme.md`, treat `theme.md` as the source of truth and update this file.
+
+- Use **React Native `StyleSheet`** only. No third-party styling libraries (no NativeWind/Tailwind, no styled-components, no `react-native-paper`, no `tamagui`, no `@rneui/themed`).
+- **No inline style objects of any kind.** This includes objects built from theme tokens (`style={{ backgroundColor: theme.colors.accent.primary }}` is just as forbidden as hardcoded literals). All concrete style values live inside `StyleSheet.create`. JSX may only reference style keys — `style={styles.button}` or, for composition, `style={[styles.button, disabled && styles.buttonDisabled]}`.
+- **The canonical pattern is a `createStyles(theme)` factory** invoked inside the component and memoized with `useMemo`. This is what allows a static `StyleSheet` to consume runtime theme tokens (and respond to light/dark mode). See `theme.md` §15 for the exact pattern — match it.
+- **Design tokens are split by domain into individual single-source files** under `src/theme/`. Each file is the sole place to edit a given domain:
+  - `src/theme/theme.ts` — colors (light + dark palettes), spacing, radii, shadows
+  - `src/theme/typography.ts` — font families, font sizes, font weights, text-style presets
+  - `src/theme/ThemeProvider.tsx` — `useTheme()` context provider
+  - `src/theme/index.ts` — re-exports for clean imports
+- Rationale: a change to a color edits exactly one file (`theme.ts`); a change to a font edits exactly one file (`typography.ts`). The split exists because colors and fonts are different concerns with different change cadences and different consumers — but each domain still has a single source of truth, in the spirit of "edit in one place." A single combined `styles/styles.ts` is **not** used in this project.
+- **No raw color hexes, font names, font sizes, spacing numbers, or border-radius numbers anywhere outside the theme files.** Components consume them via `useTheme()` and `textStyles.*`.
 
 ### Hooks
 
@@ -65,14 +67,14 @@ Any operation that does not return synchronously must be written as asynchronous
 
 ### Helpers
 
-- All reusable, non-rendering functionality lives in a single folder: **`Helper/`** at the project root.
-- Helpers are grouped by concern (e.g., `Helper/dateHelper.ts`, `Helper/validationHelper.ts`, `Helper/storageHelper.ts`).
+- All reusable, non-rendering functionality lives in a single folder: **`src/Helper/`**.
+- Helpers are grouped by concern (e.g., `src/Helper/dateHelper.ts`, `src/Helper/validationHelper.ts`, `src/Helper/storageHelper.ts`).
 - Helpers must be pure where possible (no side effects, no React state).
 - Extraction follows the workspace **rule of three**: two similar pieces of code stay duplicated; on the third occurrence (or sooner if the shared meaning is already obvious), extract into `Helper/`. Don't extract speculatively.
 
 ### Labels and i18n
 
-- All user-facing strings (labels, button text, messages, errors) live in a single file: **`labels/labels.json`**.
+- All user-facing strings (labels, button text, messages, errors) live in a single file: **`src/labels/labels.json`**.
 - Each label entry has a key and per-language values, with `en` as the required default. Schema:
   ```json
   {
@@ -85,15 +87,15 @@ Any operation that does not return synchronously must be written as asynchronous
     }
   }
   ```
-- A shared TypeScript type for the labels structure lives in `labels/labels.types.ts` so components get autocomplete and compile-time checking on label keys.
+- A shared TypeScript type for the labels structure lives in `src/labels/labels.types.ts` so components get autocomplete and compile-time checking on label keys.
 - Components import the **default English value** for the label they need:
   ```ts
-  import labels from '../labels/labels.json';
+  import labels from '@/labels/labels.json';
   // ...
   <Text>{labels.welcome_title.en}</Text>
   ```
 - No raw string literals inside components. If a label is missing from `labels.json`, add it there first, then reference it.
-- A label-resolver helper may be added later (`Helper/labelHelper.ts`) once a runtime language switch is needed — keep components importing through the same indirection so the switch is non-breaking.
+- A label-resolver helper may be added later (`src/Helper/labelHelper.ts`) once a runtime language switch is needed — keep components importing through the same indirection so the switch is non-breaking.
 
 ## Backend principles
 

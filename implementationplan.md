@@ -7,12 +7,12 @@ phases:
   title: Project bootstrap
   file: implementationplan/phase-1-bootstrap.md
   ready: true
-  done: false
+  done: true
 
 - phase: 2
   title: Theme and shared infrastructure
   file: implementationplan/phase-2-shared-infra.md
-  ready: false
+  ready: true
   done: false
 
 - phase: 3
