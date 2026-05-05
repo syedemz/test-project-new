@@ -41,7 +41,7 @@ stories:
   - id: 2.1
     title: Implement src/theme/* per theme.md §14 (tokens, typography, provider, index)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.0
     acceptance_criteria:
