@@ -70,7 +70,7 @@ stories:
   - id: 2.3
     title: Implement src/Helper/seedCredentials.ts
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.0
     acceptance_criteria:
