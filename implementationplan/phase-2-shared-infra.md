@@ -101,7 +101,7 @@ stories:
   - id: 2.5
     title: Implement src/Helper/validationHelper.ts (username/email/password rules)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.0
     acceptance_criteria:
