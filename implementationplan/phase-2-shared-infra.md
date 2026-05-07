@@ -2,6 +2,9 @@ phase: 2
 title: Theme and shared infrastructure
 last_updated: 2026-05-07
 
+phase_notes: |
+  2026-05-07 chore: `.prettierrc` `endOfLine: "auto"` added to fix Windows CRLF regression — pre-2.4 cleanup.
+
 context_summary: |
   Populate the shared theme (per theme.md), label inventory, and helper modules that
   every screen built in phases 4–6 will depend on. AsyncStorage is exercised end-to-end
