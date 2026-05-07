@@ -4,7 +4,7 @@
 <1-2 sentences. Auto-populate from architecture.md after /create-plan, or user fills now.>
 
 ## Current phase
-Phase 2 — Theme and shared infrastructure (complete pending merge). All stories 2.0–2.7 done.
+Phase 2 — Theme and shared infrastructure (complete). All stories 2.0–2.7 merged into development. Awaiting `phase-2-complete` tag and phase 3 `ready: true` flip.
 
 ## Active blockers
 - None. (`$ANDROID_HOME` was set at Windows User scope to `C:\Users\syede\AppData\Local\Android\Sdk` on 2026-05-01 and is now visible to the bash subshell — verified before the phase 1 re-dispatch. `$ANDROID_SDK_ROOT` remains unset; not required by architecture.md or the phase 1 PRD.)
@@ -23,3 +23,4 @@ Phase 2 — Theme and shared infrastructure (complete pending merge). All storie
 - 2026-05-07: story 2.6 complete — created src/Helper/credentialHelper.ts exporting lookupCredential(); lookup order: registered users first (via readUsers), then SEED_CREDENTIAL; username trimmed+lowercased, password exact; 9 unit tests in __tests__/credentialHelper.test.ts covering all ACs including the precedence invariant (registered match short-circuits seed) and case/whitespace normalisation; 88/88 tests pass, credentialHelper.ts 100%/87.5%/100%/100% (all above thresholds), lint 0, format:check exit 0, tsc --noEmit exit 0.
 - 2026-05-07: story 2.7 Leg A complete — harness in place, App.tsx temp-edited, awaiting user AVD checkpoint.
 - 2026-05-07: story 2.7 Leg B complete — App.tsx reverted to phase-1 baseline (b6ce83d), src/StorageSmokeTest.tsx and its unit test deleted. Phase 2 stories all done.
+- 2026-05-07: phase 2 complete — all 8 stories shipped (2.0 prep+aliases, 2.1 theme/*, 2.2 labels.json, 2.3 seedCredentials, 2.4 storageHelper, 2.5 validationHelper, 2.6 credentialHelper, 2.7 AVD smoke verified) plus chore PR #14 (prettier endOfLine) and bookkeeping PR #17. Thin index flipped phase 2 done: true.
