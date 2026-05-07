@@ -132,7 +132,7 @@ stories:
   - id: 2.7
     title: AsyncStorage smoke test on the AVD via a throwaway harness (TWO-LEG STORY with manual user checkpoint)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.4
     acceptance_criteria:
@@ -141,4 +141,4 @@ stories:
       - "**Leg B (subagent re-dispatched after user reports success):** `App.tsx` is reverted to exactly what phase 1 left it as (the bare Expo template — verifiable by `git show <phase-1-merge-commit>:App.tsx`). The `src/StorageSmokeTest.tsx` file is deleted. `git diff <phase-1-merge-commit>..HEAD -- App.tsx` shows zero residual smoke-test code. Note: `<ThemeProvider>` is NOT yet wired in `App.tsx` (that is a phase 3 task), so the revert target is unambiguous."
       - "Story PR description records: AVD name, Android API level, screenshot or transcript of the rendered text, and a short note on the leg A → checkpoint → leg B sequence."
       - "If the on-device round trip fails, the story is NOT closed and `notes:` on this story is updated with the structured failure entry per `engineeringprinciples.md` failure-management rules; phase 2 does NOT close until 2.7 succeeds."
-    notes: "This is the only manual on-device step in phase 2. Jest's AsyncStorage mock does not catch native-module wiring problems (mocked tests will pass even if metro fails to resolve the native module on Android), so on-device verification is mandatory before phase 2 closes. Two-leg structure: subagent → user checkpoint → subagent. LEG A complete 2026-05-07: harness at src/StorageSmokeTest.tsx, App.tsx temp-edited, awaiting AVD checkpoint."
+    notes: "This is the only manual on-device step in phase 2. Jest's AsyncStorage mock does not catch native-module wiring problems (mocked tests will pass even if metro fails to resolve the native module on Android), so on-device verification is mandatory before phase 2 closes. Two-leg structure: subagent → user checkpoint → subagent. LEG A complete 2026-05-07: harness at src/StorageSmokeTest.tsx, App.tsx temp-edited, awaiting AVD checkpoint. LEG B complete 2026-05-07: AVD verified by user, App.tsx reverted to b6ce83d baseline, harness deleted."
