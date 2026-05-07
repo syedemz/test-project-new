@@ -85,7 +85,7 @@ stories:
   - id: 2.4
     title: Implement src/Helper/storageHelper.ts (typed AsyncStorage read/write with error wrapping)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.0
     acceptance_criteria:
