@@ -1,6 +1,6 @@
 phase: 2
 title: Theme and shared infrastructure
-last_updated: 2026-05-05
+last_updated: 2026-05-07
 
 context_summary: |
   Populate the shared theme (per theme.md), label inventory, and helper modules that
@@ -57,7 +57,7 @@ stories:
   - id: 2.2
     title: Implement src/labels/labels.json with the v1 key inventory
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.0
     acceptance_criteria:

@@ -1,0 +1,45 @@
+{
+  "app_title": { "en": "Nimah" },
+
+  "ok_button": { "en": "OK" },
+  "cancel_button": { "en": "Cancel" },
+
+  "login_screen_title": { "en": "Sign In" },
+  "login_username_label": { "en": "Username" },
+  "login_username_placeholder": { "en": "Enter your username" },
+  "login_password_label": { "en": "Password" },
+  "login_password_placeholder": { "en": "Enter your password" },
+  "login_button": { "en": "Sign In" },
+  "login_link_to_register": { "en": "Don't have an account? Register" },
+  "login_invalid_credentials": { "en": "Invalid username or password. Please try again." },
+  "login_storage_error": { "en": "Could not load account data. Please try again." },
+
+  "register_screen_title": { "en": "Create Account" },
+  "register_email_label": { "en": "Email" },
+  "register_email_placeholder": { "en": "Enter your email address" },
+  "register_username_label": { "en": "Username" },
+  "register_username_placeholder": { "en": "Choose a username" },
+  "register_password_label": { "en": "Password" },
+  "register_password_placeholder": { "en": "Create a password" },
+  "register_confirm_password_label": { "en": "Confirm Password" },
+  "register_confirm_password_placeholder": { "en": "Re-enter your password" },
+  "register_button": { "en": "Create Account" },
+  "register_link_to_login": { "en": "Already have an account? Sign in" },
+  "register_validation_email_invalid": { "en": "Please enter a valid email address." },
+  "register_validation_email_in_use": { "en": "This email address is already registered." },
+  "register_validation_username_invalid": {
+    "en": "Username must be 3–20 characters and contain only letters, digits, or underscores."
+  },
+  "register_validation_username_in_use": { "en": "This username is already taken." },
+  "register_validation_password_weak": {
+    "en": "Password must be 8–64 characters and include at least one letter and one digit."
+  },
+  "register_validation_password_mismatch": { "en": "Passwords do not match." },
+  "register_storage_error": { "en": "Could not save registration. Please try again." },
+
+  "registration_success_title": { "en": "Registration Successful" },
+  "registration_success_body": { "en": "Your account has been created. You can now sign in." },
+
+  "landing_screen_title": { "en": "Home" },
+  "landing_tab_home_label": { "en": "Home" }
+}
