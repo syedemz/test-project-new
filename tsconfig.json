@@ -9,9 +9,8 @@
     "alwaysStrict": true,
     "strictBindCallApply": true,
     "strictPropertyInitialization": true,
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   }
 }
