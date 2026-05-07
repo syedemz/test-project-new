@@ -116,7 +116,7 @@ stories:
   - id: 2.6
     title: Implement src/Helper/credentialHelper.ts (login lookup with seed precedence)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 2.3
       - 2.4
