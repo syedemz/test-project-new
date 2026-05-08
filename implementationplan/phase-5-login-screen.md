@@ -1,6 +1,6 @@
 phase: 5
 title: Login screen
-last_updated: 2026-05-09 (story 5.2)
+last_updated: 2026-05-09 (phase 5 complete)
 
 context_summary: |
   Replace the LoginScreen stub with the real login flow: form layout, credential
@@ -47,7 +47,7 @@ stories:
   - id: 5.3
     title: Implement inline login-error per the architecture contract
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 5.2
     acceptance_criteria:
