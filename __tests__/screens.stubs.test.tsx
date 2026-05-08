@@ -25,8 +25,9 @@ import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import LandingScreen from '@/screens/LandingScreen';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { AuthProvider } from '@/auth/AuthContext';
 
-// Mock useNavigation so RegisterScreen renders without a NavigationContainer.
+// Mock useNavigation so screens render without a NavigationContainer.
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual<typeof import('@react-navigation/native')>(
     '@react-navigation/native',
@@ -37,11 +38,16 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+// Note (story 5.2): LoginScreen now calls useAuth(), so AuthProvider is
+// required in any test that renders LoginScreen directly.
+
 describe('given LoginScreen is rendered, when the tree is queried', () => {
   it('then the login-screen testID is in the tree', () => {
     const { getByTestId } = render(
       <ThemeProvider>
-        <LoginScreen />
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
       </ThemeProvider>,
     );
     expect(getByTestId('login-screen')).toBeTruthy();
@@ -50,7 +56,9 @@ describe('given LoginScreen is rendered, when the tree is queried', () => {
   it('then the login_screen_title label value is rendered', () => {
     const { getByTestId } = render(
       <ThemeProvider>
-        <LoginScreen />
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
       </ThemeProvider>,
     );
     expect(getByTestId('login-screen-title').props.children).toBe(labels.login_screen_title.en);

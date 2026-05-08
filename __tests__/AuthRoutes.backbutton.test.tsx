@@ -25,6 +25,10 @@ import { BackHandler } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import AuthRoutes, { AUTH_ROUTES, AuthStackParamList } from '@/navigation/AuthRoutes';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { AuthProvider } from '@/auth/AuthContext';
+
+// Note (story 5.2): LoginScreen now calls useAuth(), so AuthProvider is
+// required in any test that renders AuthRoutes (which includes LoginScreen).
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -77,9 +81,11 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
 
     const { getByTestId, queryByTestId } = render(
       <ThemeProvider>
-        <NavigationContainer ref={navRef}>
-          <AuthRoutes />
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer ref={navRef}>
+            <AuthRoutes />
+          </NavigationContainer>
+        </AuthProvider>
       </ThemeProvider>,
     );
 

@@ -13,14 +13,20 @@ import { render } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthRoutes from '@/navigation/AuthRoutes';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { AuthProvider } from '@/auth/AuthContext';
+
+// Note (story 5.2): LoginScreen now calls useAuth(), so AuthProvider is
+// required in any test that renders AuthRoutes (which includes LoginScreen).
 
 describe('given AuthRoutes is mounted inside a NavigationContainer, when the initial route is rendered', () => {
   it('then the login-screen testID is in the tree (Login is the initial route)', async () => {
     const { getByTestId } = render(
       <ThemeProvider>
-        <NavigationContainer>
-          <AuthRoutes />
-        </NavigationContainer>
+        <AuthProvider>
+          <NavigationContainer>
+            <AuthRoutes />
+          </NavigationContainer>
+        </AuthProvider>
       </ThemeProvider>,
     );
     // The NavigationContainer renders asynchronously; findByTestId resolves

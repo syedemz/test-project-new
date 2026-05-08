@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -17,6 +17,8 @@ import { textStyles } from '@/theme/typography';
 import type { Theme } from '@/theme/theme';
 import { AUTH_ROUTES } from '@/navigation/AuthRoutes';
 import type { AuthStackParamList } from '@/navigation/AuthRoutes';
+import { useAuth } from '@/auth/AuthContext';
+import { lookupCredential } from '@/Helper/credentialHelper';
 
 // ---------------------------------------------------------------------------
 // StyleSheet factory
@@ -99,18 +101,47 @@ function createStyles(theme: Theme) {
  * placeholder sourced from labels.json. A login button is rendered below
  * the fields. A Register link navigates to the Register screen.
  *
- * Submit handling, credential lookup, auth-state transitions, and inline
- * error rendering are implemented in stories 5.2 and 5.3.
+ * Submit handling wired in story 5.2: calls lookupCredential with the trimmed
+ * username and exact password, then calls signIn() on success. On storage
+ * rejection, sets storageErrorVisible (story 5.3 binds the UI to this state).
+ * Inline error UI is rendered in story 5.3.
  */
 const LoginScreen: React.FC = () => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
 
   const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
+  const { signIn } = useAuth();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Set to true when a storage read fails during login (UI wired in story 5.3).
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [storageErrorVisible, setStorageErrorVisible] = useState<boolean>(false);
 
   const handleNavigateToRegister = useCallback(() => {
     navigation.navigate(AUTH_ROUTES.REGISTER);
   }, [navigation]);
+
+  const handleSubmit = useCallback(async () => {
+    const trimmedUsername = username.trim();
+
+    let result: Awaited<ReturnType<typeof lookupCredential>>;
+    try {
+      result = await lookupCredential(trimmedUsername, password);
+    } catch {
+      // Storage failure — surface state for story 5.3 UI; do NOT sign in.
+      setStorageErrorVisible(true);
+      return;
+    }
+
+    if (result.ok) {
+      signIn();
+    }
+    // On { ok: false }: credential failure path — signIn is NOT called.
+    // The inline credential-error UI is rendered in story 5.3.
+  }, [username, password, signIn]);
 
   return (
     <KeyboardAvoidingView
@@ -133,6 +164,8 @@ const LoginScreen: React.FC = () => {
           <TextInput
             testID="login-username-input"
             style={styles.input}
+            value={username}
+            onChangeText={setUsername}
             placeholder={labels.login_username_placeholder.en}
             placeholderTextColor={theme.colors.text.tertiary}
             autoCapitalize="none"
@@ -146,6 +179,8 @@ const LoginScreen: React.FC = () => {
           <TextInput
             testID="login-password-input"
             style={styles.input}
+            value={password}
+            onChangeText={setPassword}
             placeholder={labels.login_password_placeholder.en}
             placeholderTextColor={theme.colors.text.tertiary}
             secureTextEntry={true}
@@ -158,6 +193,7 @@ const LoginScreen: React.FC = () => {
         <TouchableOpacity
           testID="login-submit-button"
           style={styles.submitButton}
+          onPress={handleSubmit}
           activeOpacity={0.8}
         >
           <Text style={styles.submitButtonText}>{labels.login_button.en}</Text>
