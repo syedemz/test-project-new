@@ -21,6 +21,7 @@ import { act, render } from '@testing-library/react-native';
 import { BackHandler } from 'react-native';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import AuthRoutes, { AUTH_ROUTES, AuthStackParamList } from '@/navigation/AuthRoutes';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -64,7 +65,7 @@ function spyOnBackHandler(): {
 // ---------------------------------------------------------------------------
 
 describe('given navigated to Register from Login in AuthRoutes, when hardware back is pressed', () => {
-  it('then Login is restored: login-screen-stub is in the tree, register-screen-stub is not', async () => {
+  it('then Login is restored: login-screen-stub is in the tree, register-screen is not', async () => {
     // Set up the spy BEFORE render so React Navigation's useBackButton
     // registers via our interceptor during the component mount effect.
     const { getHandler, restore } = spyOnBackHandler();
@@ -72,14 +73,16 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
     const navRef = createNavigationContainerRef<AuthStackParamList>();
 
     const { getByTestId, queryByTestId } = render(
-      <NavigationContainer ref={navRef}>
-        <AuthRoutes />
-      </NavigationContainer>,
+      <ThemeProvider>
+        <NavigationContainer ref={navRef}>
+          <AuthRoutes />
+        </NavigationContainer>
+      </ThemeProvider>,
     );
 
     // Step 1: verify initial route is Login.
     expect(getByTestId('login-screen-stub')).toBeTruthy();
-    expect(queryByTestId('register-screen-stub')).toBeNull();
+    expect(queryByTestId('register-screen')).toBeNull();
 
     // Step 2: navigate to Register inside act() so React flushes state.
     await act(async () => {
@@ -87,7 +90,7 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
     });
 
     // Confirm Register is now visible.
-    expect(getByTestId('register-screen-stub')).toBeTruthy();
+    expect(getByTestId('register-screen')).toBeTruthy();
     expect(queryByTestId('login-screen-stub')).toBeNull();
 
     // Step 3: retrieve the captured backPress handler.
@@ -115,7 +118,7 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
     });
 
     // Step 5: assert we are back on Login.
-    expect(queryByTestId('register-screen-stub')).toBeNull();
+    expect(queryByTestId('register-screen')).toBeNull();
     expect(getByTestId('login-screen-stub')).toBeTruthy();
 
     restore();

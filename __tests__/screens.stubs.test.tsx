@@ -4,6 +4,10 @@
  * Asserts: each stub renders its stable testID and the corresponding label
  * text sourced from labels.json, so the navigator's route tree tests in
  * later stories can rely on these identifiers.
+ *
+ * Note: RegisterScreen was replaced in story 4.1 with the real form
+ * implementation. Its testID changed from `register-screen-stub` to
+ * `register-screen`. The two assertions below reflect the new testID.
  */
 
 import React from 'react';
@@ -12,6 +16,7 @@ import labels from '@/labels/labels.json';
 import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import LandingScreen from '@/screens/LandingScreen';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
 describe('given LoginScreen stub is rendered, when the tree is queried', () => {
   it('then the login-screen-stub testID is in the tree', () => {
@@ -25,14 +30,22 @@ describe('given LoginScreen stub is rendered, when the tree is queried', () => {
   });
 });
 
-describe('given RegisterScreen stub is rendered, when the tree is queried', () => {
-  it('then the register-screen-stub testID is in the tree', () => {
-    const { getByTestId } = render(<RegisterScreen />);
-    expect(getByTestId('register-screen-stub')).toBeTruthy();
+describe('given RegisterScreen is rendered, when the tree is queried', () => {
+  it('then the register-screen testID is in the tree', () => {
+    const { getByTestId } = render(
+      <ThemeProvider>
+        <RegisterScreen />
+      </ThemeProvider>,
+    );
+    expect(getByTestId('register-screen')).toBeTruthy();
   });
 
   it('then the register_screen_title label value is rendered', () => {
-    const { getByText } = render(<RegisterScreen />);
+    const { getByText } = render(
+      <ThemeProvider>
+        <RegisterScreen />
+      </ThemeProvider>,
+    );
     expect(getByText(labels.register_screen_title.en)).toBeTruthy();
   });
 });
