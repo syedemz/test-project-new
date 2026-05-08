@@ -1,6 +1,6 @@
 phase: 4
 title: Register screen
-last_updated: 2026-05-08
+last_updated: 2026-05-08 (story 4.3)
 
 context_summary: |
   Replace the RegisterScreen stub with the real registration flow: form layout,
@@ -13,7 +13,7 @@ stories:
   - id: 4.1
     title: Build RegisterScreen layout with fields and per-field validation rendering
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`screens/RegisterScreen.tsx` renders a screen titled via `register_screen_title`. Inside it, four `<TextInput>` controls for `email`, `username`, `password`, `confirmPassword`, each with a `<Text>` label and a `placeholder` prop populated from the corresponding `register_*_label` and `register_*_placeholder` label keys."
@@ -31,7 +31,7 @@ stories:
   - id: 4.2
     title: Wire submit handler with full validation, AsyncStorage write, and storage-failure UX
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 4.1
     acceptance_criteria:
@@ -47,7 +47,7 @@ stories:
   - id: 4.3
     title: Implement registration success modal with OK navigation and back-button intercept
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 4.2
     acceptance_criteria:

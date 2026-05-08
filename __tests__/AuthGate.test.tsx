@@ -28,6 +28,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { Text, TouchableOpacity } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import AppNavigator from '@/navigation/AppNavigator';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
 // ---------------------------------------------------------------------------
 // Test harness
@@ -49,16 +50,19 @@ function SignInTrigger(): React.JSX.Element {
 
 /**
  * Full render tree used by all three auth-gate tests:
- *   `<AuthProvider> → <SignInTrigger /> + <AppNavigator /></AuthProvider>`
+ *   `<ThemeProvider><AuthProvider> → <SignInTrigger /> + <AppNavigator /></AuthProvider></ThemeProvider>`
  *
- * Initial auth state is always `isAuthenticated: false` (AuthContext default).
+ * ThemeProvider is required because RegisterScreen (part of the pre-auth stack)
+ * calls useTheme(). Initial auth state is always `isAuthenticated: false` (AuthContext default).
  */
 function AuthGateRoot(): React.JSX.Element {
   return (
-    <AuthProvider>
-      <SignInTrigger />
-      <AppNavigator />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SignInTrigger />
+        <AppNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

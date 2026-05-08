@@ -92,6 +92,7 @@ export const lightColors = {
   notification: {
     dot: palette.brandPink,
   },
+  overlay: 'rgba(0,0,0,0.5)',
 };
 
 export const darkColors = {
@@ -131,6 +132,7 @@ export const darkColors = {
   notification: {
     dot: palette.brandPinkDark,
   },
+  overlay: 'rgba(0,0,0,0.6)',
 };
 
 export const spacing = {

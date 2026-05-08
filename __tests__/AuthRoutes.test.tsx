@@ -9,13 +9,16 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import AuthRoutes from '@/navigation/AuthRoutes';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
 describe('given AuthRoutes is mounted inside a NavigationContainer, when the initial route is rendered', () => {
   it('then the login-screen-stub testID is in the tree (Login is the initial route)', async () => {
     const { getByTestId } = render(
-      <NavigationContainer>
-        <AuthRoutes />
-      </NavigationContainer>,
+      <ThemeProvider>
+        <NavigationContainer>
+          <AuthRoutes />
+        </NavigationContainer>
+      </ThemeProvider>,
     );
     // The NavigationContainer renders asynchronously; findByTestId resolves
     // once the element appears in the tree.
