@@ -1,6 +1,6 @@
 phase: 5
 title: Login screen
-last_updated: 2026-05-09 (story 5.1)
+last_updated: 2026-05-09 (story 5.2)
 
 context_summary: |
   Replace the LoginScreen stub with the real login flow: form layout, credential
@@ -30,7 +30,7 @@ stories:
   - id: 5.2
     title: Wire login submit with credential lookup and auth-state transition
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 5.1
     acceptance_criteria:
