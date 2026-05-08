@@ -1,6 +1,6 @@
 phase: 4
 title: Register screen
-last_updated: 2026-05-08 (story 4.1)
+last_updated: 2026-05-09 (story 4.2)
 
 context_summary: |
   Replace the RegisterScreen stub with the real registration flow: form layout,
@@ -31,7 +31,7 @@ stories:
   - id: 4.2
     title: Wire submit handler with full validation, AsyncStorage write, and storage-failure UX
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 4.1
     acceptance_criteria:
