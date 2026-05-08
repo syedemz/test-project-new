@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   ScrollView,
   StyleSheet,
@@ -9,6 +10,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import labels from '@/labels/labels.json';
 import { useTheme } from '@/theme/ThemeProvider';
 import { textStyles } from '@/theme/typography';
@@ -22,6 +25,8 @@ import { readUsers, writeUsers } from '@/Helper/storageHelper';
 import type { StoredUser } from '@/Helper/storageHelper';
 import { SEED_CREDENTIAL } from '@/Helper/seedCredentials';
 import type { Theme } from '@/theme/theme';
+import { AUTH_ROUTES } from '@/navigation/AuthRoutes';
+import type { AuthStackParamList } from '@/navigation/AuthRoutes';
 
 // ---------------------------------------------------------------------------
 // Error-mapping helpers
@@ -156,6 +161,45 @@ function createStyles(theme: Theme) {
       marginTop: theme.spacing.sm,
       textAlign: 'center',
     },
+    // -----------------------------------------------------------------------
+    // Success modal styles
+    // -----------------------------------------------------------------------
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: theme.colors.overlay,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: theme.spacing.xl,
+    },
+    modalCard: {
+      backgroundColor: theme.colors.bg.surface,
+      borderRadius: theme.radii.lg,
+      paddingHorizontal: theme.spacing.xxl,
+      paddingTop: theme.spacing.xxl,
+      paddingBottom: theme.spacing.xl,
+      width: '100%',
+      ...theme.shadows.md,
+    },
+    modalTitle: {
+      ...textStyles.heading.xl,
+      color: theme.colors.text.primary,
+      marginBottom: theme.spacing.sm,
+    },
+    modalBody: {
+      ...textStyles.body.md,
+      color: theme.colors.text.secondary,
+      marginBottom: theme.spacing.xxxl,
+    },
+    modalOkButton: {
+      backgroundColor: theme.colors.accent.primary,
+      borderRadius: theme.radii.md,
+      paddingVertical: theme.spacing.md,
+      alignItems: 'center',
+    },
+    modalOkButtonText: {
+      ...textStyles.label.md,
+      color: theme.colors.text.inverse,
+    },
   });
 }
 
@@ -173,14 +217,17 @@ function createStyles(theme: Theme) {
  * seed credential, and persists a new `StoredUser` record via `writeUsers`.
  *
  * State transitions:
- * - `success` flips to `true` after a successful `writeUsers` call; story 4.3
- *   will render the success modal on this flag.
+ * - `success` flips to `true` after a successful `writeUsers` call, causing
+ *   the registration success modal to render. The modal is the only way for
+ *   the user to navigate to Login after a successful registration.
  * - `storageError` holds the storage-failure copy (from `register_storage_error`)
  *   when `writeUsers` rejects. The form remains editable on failure.
  */
 const RegisterScreen: React.FC = () => {
   const theme = useTheme();
   const styles = useMemo(() => createStyles(theme), [theme]);
+
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
 
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -192,6 +239,9 @@ const RegisterScreen: React.FC = () => {
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
   const [storageError, setStorageError] = useState<string | null>(null);
+
+  // Flips to true after a successful writeUsers call. Drives modal visibility.
+  const [success, setSuccess] = useState(false);
 
   const handleEmailBlur = useCallback(() => {
     const result = validateEmail(email);
@@ -291,9 +341,26 @@ const RegisterScreen: React.FC = () => {
       return;
     }
 
-    // Clear any stale storage error. success state and modal are wired in story 4.3.
+    // All writes succeeded: clear any stale storage error and flip success.
     setStorageError(null);
+    setSuccess(true);
   }, [email, username, password, confirmPassword]);
+
+  /**
+   * Handles both the OK button tap and the hardware back press while the
+   * success modal is open.
+   *
+   * Dismisses the modal (clears the `success` flag) and navigates to Login
+   * in a single synchronous handler so there is no observable flash of the
+   * RegisterScreen between the two actions.
+   *
+   * This is the ONLY dismiss path for the modal. No backdrop-press handler,
+   * no auto-timeout, and no other `onDismiss` callback performs navigation.
+   */
+  const handleSuccess = useCallback(() => {
+    setSuccess(false);
+    navigation.navigate(AUTH_ROUTES.LOGIN);
+  }, [navigation]);
 
   return (
     <KeyboardAvoidingView
@@ -301,6 +368,45 @@ const RegisterScreen: React.FC = () => {
       style={styles.keyboardAvoid}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/*
+       * Registration success modal.
+       *
+       * visible is driven solely by the `success` state flag. The only two
+       * dismiss paths are:
+       *   1. OK button (onPress → handleSuccess)
+       *   2. Android hardware back press (onRequestClose → handleSuccess)
+       *
+       * Tap-outside-to-dismiss is NOT wired: there is no Pressable backdrop
+       * and no onBackdropPress prop. The modal contents do not intercept
+       * touch events that fall outside the card — nothing outside the OK
+       * button can close it.
+       */}
+      <Modal
+        testID="register-success-modal"
+        visible={success}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleSuccess}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <Text testID="register-success-modal-title" style={styles.modalTitle}>
+              {labels.registration_success_title.en}
+            </Text>
+            <Text testID="register-success-modal-body" style={styles.modalBody}>
+              {labels.registration_success_body.en}
+            </Text>
+            <TouchableOpacity
+              testID="register-success-ok-button"
+              style={styles.modalOkButton}
+              onPress={handleSuccess}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.modalOkButtonText}>{labels.ok_button.en}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"

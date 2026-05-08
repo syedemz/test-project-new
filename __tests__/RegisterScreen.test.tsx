@@ -1,5 +1,5 @@
 /**
- * Component tests for RegisterScreen — story 4.1 and story 4.2 acceptance criteria.
+ * Component tests for RegisterScreen — story 4.1, 4.2, and 4.3 acceptance criteria.
  *
  * Story 4.1 covers:
  *   1. Render with default state — all four fields and screen title render;
@@ -15,8 +15,16 @@
  *   8. Successful write — writeUsers called exactly once with the correct record shape.
  *   9. Storage write failure — register_storage_error renders, form stays editable.
  *
+ * Story 4.3 covers:
+ *   10. Success modal does NOT render before a successful submit.
+ *   11. Success modal renders after a successful submit (title, body, OK button).
+ *   12. OK button dismisses modal AND navigates to Login (navigation spy).
+ *   13. Hardware back (onRequestClose) behaves identically to OK.
+ *
  * ThemeProvider is always provided because RegisterScreen calls useTheme().
  * storageHelper is mocked so tests never hit AsyncStorage.
+ * useNavigation is mocked so navigation.navigate can be asserted without
+ * needing a NavigationContainer in the test tree.
  */
 
 import React from 'react';
@@ -25,6 +33,23 @@ import { ThemeProvider } from '@/theme/ThemeProvider';
 import RegisterScreen from '@/screens/RegisterScreen';
 import labels from '@/labels/labels.json';
 import type { StoredUser } from '@/Helper/storageHelper';
+import { AUTH_ROUTES } from '@/navigation/AuthRoutes';
+
+// ---------------------------------------------------------------------------
+// Mock @react-navigation/native — useNavigation returns a spy navigate fn.
+// ---------------------------------------------------------------------------
+
+const mockNavigate = jest.fn();
+
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual<typeof import('@react-navigation/native')>(
+    '@react-navigation/native',
+  );
+  return {
+    ...actual,
+    useNavigation: () => ({ navigate: mockNavigate }),
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mock storageHelper — must appear before any import that pulls the module.
@@ -99,6 +124,7 @@ async function fillAndSubmit(
 /** Reset all mocks between tests so state doesn't leak. */
 beforeEach(() => {
   jest.clearAllMocks();
+  mockNavigate.mockClear();
 });
 
 // ---------------------------------------------------------------------------
@@ -614,5 +640,116 @@ describe('given writeUsers rejects, when the submit button is pressed with valid
     expect(queries.getByTestId('register-confirm-password-input')).toBeTruthy();
     // Submit button still in the tree.
     expect(queries.getByTestId('register-submit-button')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.3 — AC1: modal does NOT render before a successful submit
+// ---------------------------------------------------------------------------
+
+describe('given RegisterScreen is rendered with default state, when the success modal is queried', () => {
+  it('then the success modal is not visible before any submission', () => {
+    const queries = renderScreen();
+
+    // The modal element may be in the tree (RN renders Modal even when
+    // visible=false), but the title/body/OK-button content must not be
+    // present in an accessible state.  We assert the title and OK button
+    // text are absent so the modal is definitively not shown.
+    expect(queries.queryByTestId('register-success-modal-title')).toBeNull();
+    expect(queries.queryByTestId('register-success-ok-button')).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.3 — AC2: modal renders after a successful submit
+// ---------------------------------------------------------------------------
+
+describe('given a fully valid form, when the submit button is pressed and writeUsers resolves', () => {
+  it('then the success modal renders with the correct title, body, and OK button', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    storageHelper.writeUsers.mockResolvedValue(undefined);
+
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-success-modal-title').props.children).toBe(
+        labels.registration_success_title.en,
+      );
+    });
+
+    expect(queries.getByTestId('register-success-modal-body').props.children).toBe(
+      labels.registration_success_body.en,
+    );
+
+    // OK button label
+    expect(queries.getByTestId('register-success-ok-button')).toBeTruthy();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.3 — AC3: OK button dismisses modal AND navigates to Login
+// ---------------------------------------------------------------------------
+
+describe('given the success modal is visible, when the OK button is pressed', () => {
+  it('then the modal title is no longer rendered and navigation.navigate is called with AUTH_ROUTES.LOGIN', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    storageHelper.writeUsers.mockResolvedValue(undefined);
+
+    const queries = renderScreen();
+
+    // Trigger success state.
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-success-modal-title')).toBeTruthy();
+    });
+
+    // Press OK — should dismiss modal and navigate.
+    await act(async () => {
+      fireEvent.press(queries.getByTestId('register-success-ok-button'));
+    });
+
+    // Modal content is gone (success state cleared).
+    expect(queries.queryByTestId('register-success-modal-title')).toBeNull();
+
+    // Navigation was called with the Login route.
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith(AUTH_ROUTES.LOGIN);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.3 — AC4: hardware back (onRequestClose) behaves identically to OK
+// ---------------------------------------------------------------------------
+
+describe('given the success modal is visible, when the hardware back button fires (onRequestClose)', () => {
+  it('then the modal title is no longer rendered and navigation.navigate is called with AUTH_ROUTES.LOGIN', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    storageHelper.writeUsers.mockResolvedValue(undefined);
+
+    const queries = renderScreen();
+
+    // Trigger success state.
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-success-modal-title')).toBeTruthy();
+    });
+
+    // Simulate Android hardware back by invoking onRequestClose directly on
+    // the Modal element — idiomatic for RN's built-in Modal.
+    const modal = queries.getByTestId('register-success-modal');
+    await act(async () => {
+      fireEvent(modal, 'requestClose');
+    });
+
+    // Modal content is gone (success state cleared).
+    expect(queries.queryByTestId('register-success-modal-title')).toBeNull();
+
+    // Navigation was called with the Login route — same as OK path.
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith(AUTH_ROUTES.LOGIN);
   });
 });

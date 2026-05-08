@@ -8,6 +8,9 @@
  * Note: RegisterScreen was replaced in story 4.1 with the real form
  * implementation. Its testID changed from `register-screen-stub` to
  * `register-screen`. The two assertions below reflect the new testID.
+ *
+ * Note (story 4.3): RegisterScreen now calls useNavigation(). We mock it here
+ * so this suite renders RegisterScreen without needing a NavigationContainer.
  */
 
 import React from 'react';
@@ -17,6 +20,17 @@ import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import LandingScreen from '@/screens/LandingScreen';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+
+// Mock useNavigation so RegisterScreen renders without a NavigationContainer.
+jest.mock('@react-navigation/native', () => {
+  const actual = jest.requireActual<typeof import('@react-navigation/native')>(
+    '@react-navigation/native',
+  );
+  return {
+    ...actual,
+    useNavigation: () => ({ navigate: jest.fn() }),
+  };
+});
 
 describe('given LoginScreen stub is rendered, when the tree is queried', () => {
   it('then the login-screen-stub testID is in the tree', () => {

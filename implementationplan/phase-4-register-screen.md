@@ -1,6 +1,6 @@
 phase: 4
 title: Register screen
-last_updated: 2026-05-09 (story 4.2)
+last_updated: 2026-05-08 (story 4.3)
 
 context_summary: |
   Replace the RegisterScreen stub with the real registration flow: form layout,
@@ -47,7 +47,7 @@ stories:
   - id: 4.3
     title: Implement registration success modal with OK navigation and back-button intercept
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 4.2
     acceptance_criteria:
