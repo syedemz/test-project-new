@@ -6,6 +6,9 @@
  * <NavigationContainer>, navigates to Register, fires the hardwareBackPress
  * event via BackHandler, and asserts the navigator is back on Login."
  *
+ * Note (story 5.1): LoginScreen testID renamed from `login-screen-stub` to
+ * `login-screen`. All assertions updated accordingly.
+ *
  * Platform note: jest-expo's default platform is 'ios'. The iOS BackHandler
  * implementation is a no-op — its addEventListener() registers nothing and
  * returns a stub. React Navigation's useBackButton hook (NavigationContainer.js
@@ -65,7 +68,7 @@ function spyOnBackHandler(): {
 // ---------------------------------------------------------------------------
 
 describe('given navigated to Register from Login in AuthRoutes, when hardware back is pressed', () => {
-  it('then Login is restored: login-screen-stub is in the tree, register-screen is not', async () => {
+  it('then Login is restored: login-screen is in the tree, register-screen is not', async () => {
     // Set up the spy BEFORE render so React Navigation's useBackButton
     // registers via our interceptor during the component mount effect.
     const { getHandler, restore } = spyOnBackHandler();
@@ -81,7 +84,7 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
     );
 
     // Step 1: verify initial route is Login.
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    expect(getByTestId('login-screen')).toBeTruthy();
     expect(queryByTestId('register-screen')).toBeNull();
 
     // Step 2: navigate to Register inside act() so React flushes state.
@@ -91,7 +94,7 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
 
     // Confirm Register is now visible.
     expect(getByTestId('register-screen')).toBeTruthy();
-    expect(queryByTestId('login-screen-stub')).toBeNull();
+    expect(queryByTestId('login-screen')).toBeNull();
 
     // Step 3: retrieve the captured backPress handler.
     // React Navigation registers the handler in a useEffect on mount, so it
@@ -119,7 +122,7 @@ describe('given navigated to Register from Login in AuthRoutes, when hardware ba
 
     // Step 5: assert we are back on Login.
     expect(queryByTestId('register-screen')).toBeNull();
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    expect(getByTestId('login-screen')).toBeTruthy();
 
     restore();
   });

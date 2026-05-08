@@ -8,10 +8,13 @@
  * the pattern used in AuthContext.test.tsx.
  *
  * Covers:
- *   1. When unauthenticated: login-screen-stub is in the tree;
+ *   1. When unauthenticated: login-screen is in the tree;
  *      landing-screen-stub is NOT.
  *   2. When authenticated: landing-screen-stub is in the tree;
- *      login-screen-stub is NOT.
+ *      login-screen is NOT.
+ *
+ * Note (story 5.1): LoginScreen testID renamed from `login-screen-stub` to
+ * `login-screen`. All assertions updated accordingly.
  */
 
 import React from 'react';
@@ -65,16 +68,16 @@ function TestRoot(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 describe('given AppNavigator is mounted with an unauthenticated AuthProvider, when the tree first renders', () => {
-  it('then login-screen-stub is in the tree and landing-screen-stub is NOT', () => {
+  it('then login-screen is in the tree and landing-screen-stub is NOT', () => {
     const { getByTestId, queryByTestId } = render(<TestRoot />);
 
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    expect(getByTestId('login-screen')).toBeTruthy();
     expect(queryByTestId('landing-screen-stub')).toBeNull();
   });
 });
 
 describe('given AppNavigator is mounted and signIn is called, when the auth state transitions to authenticated', () => {
-  it('then landing-screen-stub is in the tree and login-screen-stub is NOT', () => {
+  it('then landing-screen-stub is in the tree and login-screen is NOT', () => {
     const { getByTestId, queryByTestId } = render(<TestRoot />);
 
     act(() => {
@@ -82,6 +85,6 @@ describe('given AppNavigator is mounted and signIn is called, when the auth stat
     });
 
     expect(getByTestId('landing-screen-stub')).toBeTruthy();
-    expect(queryByTestId('login-screen-stub')).toBeNull();
+    expect(queryByTestId('login-screen')).toBeNull();
   });
 });

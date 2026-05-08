@@ -3,6 +3,9 @@
  *
  * Asserts: mounting AuthRoutes inside a NavigationContainer renders the Login
  * screen as the initial route, identified by its stable testID.
+ *
+ * Note (story 5.1): LoginScreen testID renamed from `login-screen-stub` to
+ * `login-screen`. Assertion updated accordingly.
  */
 
 import React from 'react';
@@ -12,7 +15,7 @@ import AuthRoutes from '@/navigation/AuthRoutes';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 
 describe('given AuthRoutes is mounted inside a NavigationContainer, when the initial route is rendered', () => {
-  it('then the login-screen-stub testID is in the tree (Login is the initial route)', async () => {
+  it('then the login-screen testID is in the tree (Login is the initial route)', async () => {
     const { getByTestId } = render(
       <ThemeProvider>
         <NavigationContainer>
@@ -22,6 +25,6 @@ describe('given AuthRoutes is mounted inside a NavigationContainer, when the ini
     );
     // The NavigationContainer renders asynchronously; findByTestId resolves
     // once the element appears in the tree.
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    expect(getByTestId('login-screen')).toBeTruthy();
   });
 });

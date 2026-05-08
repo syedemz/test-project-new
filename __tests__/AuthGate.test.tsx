@@ -15,12 +15,15 @@
  *
  * Covers:
  *   1. Unauthenticated initial render → landing-screen-stub is NOT in the tree;
- *      login-screen-stub IS in the tree.
+ *      login-screen IS in the tree.
  *   2. After signIn() → landing-screen-stub IS in the tree;
- *      login-screen-stub is NOT.
+ *      login-screen is NOT.
  *   3. Toggle within the same render (signIn called post-mount) → pre-auth stack
  *      is unmounted and post-auth stack is mounted, verified by re-asserting
  *      testIDs after the state transition.
+ *
+ * Note (story 5.1): LoginScreen testID renamed from `login-screen-stub` to
+ * `login-screen`. All assertions updated accordingly.
  */
 
 import React from 'react';
@@ -71,18 +74,18 @@ function AuthGateRoot(): React.JSX.Element {
 // ---------------------------------------------------------------------------
 
 describe('given <AuthProvider><AppNavigator /> is mounted with default (unauthenticated) auth state, when the tree first renders', () => {
-  it('then landing-screen-stub is NOT in the tree and login-screen-stub IS in the tree', () => {
+  it('then landing-screen-stub is NOT in the tree and login-screen IS in the tree', () => {
     const { queryByTestId, getByTestId } = render(<AuthGateRoot />);
 
     // AC1: queryByTestId returns null when the element is not mounted.
     expect(queryByTestId('landing-screen-stub')).toBeNull();
-    // Login stub must be present — the pre-auth stack is the active navigator.
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    // Login screen must be present — the pre-auth stack is the active navigator.
+    expect(getByTestId('login-screen')).toBeTruthy();
   });
 });
 
 describe('given <AuthProvider><AppNavigator /> is mounted with default (unauthenticated) auth state and signIn is called, when auth state transitions to authenticated', () => {
-  it('then landing-screen-stub IS in the tree and login-screen-stub is NOT', () => {
+  it('then landing-screen-stub IS in the tree and login-screen is NOT', () => {
     const { queryByTestId, getByTestId } = render(<AuthGateRoot />);
 
     act(() => {
@@ -91,7 +94,7 @@ describe('given <AuthProvider><AppNavigator /> is mounted with default (unauthen
 
     // AC2: post-auth stack (AppRoutes) is mounted; pre-auth stack is unmounted.
     expect(getByTestId('landing-screen-stub')).toBeTruthy();
-    expect(queryByTestId('login-screen-stub')).toBeNull();
+    expect(queryByTestId('login-screen')).toBeNull();
   });
 });
 
@@ -101,7 +104,7 @@ describe('given <AuthProvider><AppNavigator /> mounted once with unauthenticated
 
     // --- Pre-transition: assert pre-auth tree (unauthenticated) ---
     expect(queryByTestId('landing-screen-stub')).toBeNull();
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+    expect(getByTestId('login-screen')).toBeTruthy();
 
     // --- Trigger transition within the same render call ---
     act(() => {
@@ -112,6 +115,6 @@ describe('given <AuthProvider><AppNavigator /> mounted once with unauthenticated
     // AC3: The unmount/remount of the stacks happened inside the same render();
     // this verifies the "inactive stack is fully unmounted" architecture guarantee.
     expect(getByTestId('landing-screen-stub')).toBeTruthy();
-    expect(queryByTestId('login-screen-stub')).toBeNull();
+    expect(queryByTestId('login-screen')).toBeNull();
   });
 });
