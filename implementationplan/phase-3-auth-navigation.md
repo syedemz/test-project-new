@@ -39,7 +39,7 @@ stories:
   - id: 3.2
     title: Implement auth context/provider (in-memory)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`src/auth/AuthContext.tsx` exports a typed React Context plus an `<AuthProvider>` component plus a `useAuth()` hook. Folder is `src/auth/` (settled in the 2026-05-08 brainstorm — F3, chosen over `src/context/`)."
