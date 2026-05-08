@@ -1,6 +1,6 @@
 phase: 5
 title: Login screen
-last_updated: 2026-05-09
+last_updated: 2026-05-09 (story 5.1)
 
 context_summary: |
   Replace the LoginScreen stub with the real login flow: form layout, credential
@@ -14,7 +14,7 @@ stories:
   - id: 5.1
     title: Build LoginScreen layout with username and password fields
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`screens/LoginScreen.tsx` renders a screen titled via `login_screen_title`. It contains two `<TextInput>` controls for `username` and `password`, each with a label and `placeholder` populated from the corresponding `login_username_label`/`login_username_placeholder`/`login_password_label`/`login_password_placeholder` label keys."
