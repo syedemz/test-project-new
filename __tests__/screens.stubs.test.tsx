@@ -9,8 +9,13 @@
  * implementation. Its testID changed from `register-screen-stub` to
  * `register-screen`. The two assertions below reflect the new testID.
  *
+ * Note: LoginScreen was replaced in story 5.1 with the real layout
+ * implementation. Its testID changed from `login-screen-stub` to
+ * `login-screen`. The assertions below reflect the new testID.
+ *
  * Note (story 4.3): RegisterScreen now calls useNavigation(). We mock it here
  * so this suite renders RegisterScreen without needing a NavigationContainer.
+ * LoginScreen also calls useNavigation() from story 5.1 onward.
  */
 
 import React from 'react';
@@ -20,8 +25,9 @@ import LoginScreen from '@/screens/LoginScreen';
 import RegisterScreen from '@/screens/RegisterScreen';
 import LandingScreen from '@/screens/LandingScreen';
 import { ThemeProvider } from '@/theme/ThemeProvider';
+import { AuthProvider } from '@/auth/AuthContext';
 
-// Mock useNavigation so RegisterScreen renders without a NavigationContainer.
+// Mock useNavigation so screens render without a NavigationContainer.
 jest.mock('@react-navigation/native', () => {
   const actual = jest.requireActual<typeof import('@react-navigation/native')>(
     '@react-navigation/native',
@@ -32,15 +38,30 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
-describe('given LoginScreen stub is rendered, when the tree is queried', () => {
-  it('then the login-screen-stub testID is in the tree', () => {
-    const { getByTestId } = render(<LoginScreen />);
-    expect(getByTestId('login-screen-stub')).toBeTruthy();
+// Note (story 5.2): LoginScreen now calls useAuth(), so AuthProvider is
+// required in any test that renders LoginScreen directly.
+
+describe('given LoginScreen is rendered, when the tree is queried', () => {
+  it('then the login-screen testID is in the tree', () => {
+    const { getByTestId } = render(
+      <ThemeProvider>
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
+      </ThemeProvider>,
+    );
+    expect(getByTestId('login-screen')).toBeTruthy();
   });
 
   it('then the login_screen_title label value is rendered', () => {
-    const { getByText } = render(<LoginScreen />);
-    expect(getByText(labels.login_screen_title.en)).toBeTruthy();
+    const { getByTestId } = render(
+      <ThemeProvider>
+        <AuthProvider>
+          <LoginScreen />
+        </AuthProvider>
+      </ThemeProvider>,
+    );
+    expect(getByTestId('login-screen-title').props.children).toBe(labels.login_screen_title.en);
   });
 });
 
