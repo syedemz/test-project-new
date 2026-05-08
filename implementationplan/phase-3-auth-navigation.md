@@ -1,6 +1,6 @@
 phase: 3
 title: Auth state and navigation skeleton
-last_updated: 2026-05-08
+last_updated: 2026-05-08 (story 3.7)
 
 context_summary: |
   Build the in-memory auth provider, the AppNavigator that swaps stacks based on
@@ -39,7 +39,7 @@ stories:
   - id: 3.2
     title: Implement auth context/provider (in-memory)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "`src/auth/AuthContext.tsx` exports a typed React Context plus an `<AuthProvider>` component plus a `useAuth()` hook. Folder is `src/auth/` (settled in the 2026-05-08 brainstorm — F3, chosen over `src/context/`)."
@@ -52,7 +52,7 @@ stories:
   - id: 3.3
     title: Implement navigation/AuthRoutes.tsx (pre-auth stack)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.1
     acceptance_criteria:
@@ -67,7 +67,7 @@ stories:
   - id: 3.4
     title: Implement navigation/AppRoutes.tsx with bottom tab navigator hosting Landing
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.1
     acceptance_criteria:
@@ -81,7 +81,7 @@ stories:
   - id: 3.5
     title: Implement navigation/AppNavigator.tsx (auth-gated stack swap)
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.2
       - 3.3
@@ -96,7 +96,7 @@ stories:
   - id: 3.6
     title: Wire Android hardware back-button behavior at the auth boundary
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.3
       - 3.5
@@ -110,7 +110,7 @@ stories:
   - id: 3.7
     title: Auth-gate render-tree tests
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.5
     acceptance_criteria:

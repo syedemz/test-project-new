@@ -140,14 +140,14 @@ Validation lives in a helper (`Helper/validationHelper.ts`) and returns a typed 
 | Mobile app             | TypeScript (strict mode)                    | `5.9.x` (updated: Expo SDK 55 template ships `~5.9.2`) |
 | Mobile app             | React Native                                | **`0.83.6`** (actual Expo SDK 55 pin; was target `0.85.x` — updated 2026-05-03 per story 1.2 AC #3) |
 | Mobile app             | Expo SDK                                    | `55` (installed `~55.0.19`)                           |
-| Navigation             | React Navigation                            | `7.x` (target confirmed; latest stable `7.2.2` compatible with RN 0.83.6 + React 19.2.0) |
+| Navigation             | React Navigation (`@react-navigation/native`) | **`7.2.3`** (resolved by story 3.3 `npx expo install`; `@react-navigation/native-stack` `7.14.13`, `@react-navigation/bottom-tabs` `7.15.12`, `react-native-screens` `4.23.0`, `react-native-safe-area-context` `5.6.2`) |
 | Local persistence      | `@react-native-async-storage/async-storage` | `2.2.0` (Expo SDK 55 bundled pin)                     |
 | Testing                | Jest + React Native Testing Library         | latest compatible with RN 0.83.6 pinned by Expo 55    |
 | Lint / format          | ESLint, `eslint-plugin-tsdoc`, Prettier     | latest                                                |
 | Node (dev environment) | Node.js                                     | `24.x` (verified `v24.14.1` on host)                  |
 | JDK (Android build)    | Java (bundled with Android Studio)          | whatever ships with the installed Android Studio      |
 
-**Version-pin policy:** Expo SDK 55 pins RN at `0.83.6` (not 0.85.x as originally targeted). Architecture updated 2026-05-03 per story 1.2 AC #3 to match the actual installed pin — fighting Expo's pinned RN creates toolchain breakage. Same logic for React Navigation: target 7.x confirmed at bootstrap (latest stable 7.2.2, compatible with React 19.2.0). Phase 1 recorded the actual versions installed.
+**Version-pin policy:** Expo SDK 55 pins RN at `0.83.6` (not 0.85.x as originally targeted). Architecture updated 2026-05-03 per story 1.2 AC #3 to match the actual installed pin — fighting Expo's pinned RN creates toolchain breakage. React Navigation 7.x confirmed: `@react-navigation/native@7.2.3` installed by story 3.3 via `npx expo install` (2026-05-08); all five navigation packages recorded in the pinned-version table above. Open Question §254 closed.
 
 Language and styling discipline is governed by `codingprinciples.md`.
 
@@ -251,7 +251,6 @@ The following are **genuine unknowns** at architecture time. Items that were amb
 
 - **Password storage for registered users.** v1 stores plaintext in `AsyncStorage`. Acceptable for a local evaluation app; flagged in `tobedone.md` should the project ever leave the eval scope.
 - **Expo SDK 55 ↔ RN pin.** The architecture targets RN 0.85.x but defers to whatever Expo SDK 55 actually pins. Phase 1 records the result; if it differs, the table above is updated to match. Captured here only because the actual pin is not knowable until install.
-- **React Navigation major version.** Same — targets 7.x, defers to whatever Expo SDK 55's docs recommend at bootstrap. Phase 1 records the result.
 - **Android target API level.** Defaults to whatever Expo SDK 55's managed workflow targets. No specific API level required by the project.
 - **Auth context vs. lightweight state library.** v1 uses React Context for the single auth flag. If post-auth state grows, revisit and consider Zustand/Redux Toolkit. Not a v1 decision.
 - **Node 24.x compatibility with Expo SDK 55.** The Node pin was raised from 20.x LTS to 24.x on 2026-05-01 to match the host (`v24.14.1`). Expo SDK 55 was originally vetted against Node 20; Node 24 may or may not be officially supported. If `npx expo` install or bundler steps fail at any point in phase 1+, suspect Node mismatch first — fall back to Node 20 LTS via `nvm` and revert this pin. The phase 1 prereq verification will document the actual Node version observed during install.

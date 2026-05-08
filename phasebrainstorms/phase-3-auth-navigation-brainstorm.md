@@ -153,3 +153,75 @@ as part of its install diff. Latter is cleaner.
 No findings are blockers. Items 1, 2, 3, 4, 5, 9, 10 can be threaded into
 dispatch briefs without editing the PRD. The PRD's stories themselves are
 sound.
+
+## 2026-05-08 10:04 brainstorm (re-run after PRD edits)
+
+PRD was edited and committed in `65e08ad` to address the prior session's
+findings F1–F5, F9, F10. Re-audit of the updated PRD against the same five
+dimensions:
+
+### Prior findings — verification
+
+- **F1 (react-navigation install).** Story 3.3 AC1 now explicitly owns the
+  `npx expo install @react-navigation/native @react-navigation/native-stack
+  @react-navigation/bottom-tabs react-native-screens
+  react-native-safe-area-context` step and pins package-lock as a
+  deliverable. ✅ resolved.
+- **F2 (path convention).** `context_summary` now states all phase-3
+  source lives under `src/`. Every story AC that names a file path now
+  uses `src/screens/`, `src/auth/`, or `src/navigation/`. ✅ resolved.
+- **F3 (auth/ vs context/).** Story 3.2 AC1 pins `src/auth/AuthContext.tsx`
+  (the `or context/` fork is gone). ✅ resolved.
+- **F4 (3.6 non-testable ACs).** Story 3.6 now has three ACs explicitly
+  tagged `(code-review only — F4)` for the absence-of-handler facts on
+  Login and Landing, and `(test-backed)` for the Register-pop assertion.
+  ✅ resolved.
+- **F5 (3.4 tab-label coverage).** Story 3.4 AC5 added a tab-label text
+  assertion to the existing unit test. ✅ resolved.
+- **F9 (error message wording).** Story 3.2 AC4 pins the exact string
+  `'useAuth must be used within an AuthProvider'`. ✅ resolved.
+- **F10 (open question §254).** Story 3.3 AC2 owns updating
+  architecture.md's pinned-version table and removing Open Question §254.
+  ✅ resolved.
+
+### New findings from the re-audit
+
+- **N1 (cosmetic — story 3.3 title).** The title still reads "Implement
+  navigation/AuthRoutes.tsx (pre-auth stack)" but the story now also
+  installs five npm packages and edits architecture.md. The title
+  understates the scope. **Verdict:** non-blocking; the AC list is the
+  source of truth. Skip.
+- **N2 (jest-expo transform-ignore-patterns).** Phase-2's `jest.config.js`
+  uses the `jest-expo` preset, which by default does NOT transform
+  `node_modules` except for an Expo-aware allowlist. Once
+  `@react-navigation/*` is installed, the test runner may fail with
+  `SyntaxError: Cannot use import statement outside a module` when 3.3's
+  unit test mounts `<NavigationContainer>`. The `jest-expo` preset's
+  `transformIgnorePatterns` already includes `@react-navigation`, so this
+  *should* be a non-issue — but if it isn't, story 3.3 is the place to
+  notice and patch. **Verdict:** flag in 3.3's brief as a known
+  potential-friction point; let the subagent diagnose if it bites.
+- **N3 (`enableScreens` for react-native-screens).** react-native-screens
+  v3+ enables screens by default; no manual `enableScreens()` call is
+  required. The `<NavigationContainer>` will work out of the box.
+  **Verdict:** informational; the subagent can call it out in the PR
+  description if it explicitly verifies the package version is ≥ v3.
+- **N4 (story 3.7 `landing-screen-stub` rendering through tabs).** Story
+  3.7 AC2 forces `isAuthenticated: true` and asserts
+  `landing-screen-stub` IS in the tree. The post-auth stack renders
+  `<AppRoutes />`, which is a bottom-tab navigator that mounts its
+  initial-route screen by default — so `<LandingScreen />` (the stub)
+  will be in the tree. **Verdict:** sanity-checked, no concern. The
+  test should also tolerate `getAllByTestId` because if any future tab
+  also stamps the stub, multiple matches will surface — but with v1's
+  one-tab navigator, single-match is fine.
+- **N5 (App.tsx unmodified by phase 2 — still true).** Verified clean
+  via `git log` — App.tsx is at the phase-1 baseline `b6ce83d` per
+  context.md 2026-05-07. Story 3.5 AC4 is therefore safe.
+
+### Conclusion
+
+All blockers resolved. Findings N1–N5 are either cosmetic, informational,
+or sanity checks that warrant a note in the dispatch brief but no PRD
+edit. Dispatch order unchanged: **3.1 → 3.2 → 3.3 → 3.4 → 3.5 → 3.6 →
+3.7**.
