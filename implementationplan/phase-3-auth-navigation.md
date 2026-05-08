@@ -1,6 +1,6 @@
 phase: 3
 title: Auth state and navigation skeleton
-last_updated: 2026-05-08 (story 3.6)
+last_updated: 2026-05-08 (story 3.7)
 
 context_summary: |
   Build the in-memory auth provider, the AppNavigator that swaps stacks based on
@@ -110,7 +110,7 @@ stories:
   - id: 3.7
     title: Auth-gate render-tree tests
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.5
     acceptance_criteria:
