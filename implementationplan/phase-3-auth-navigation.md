@@ -1,6 +1,6 @@
 phase: 3
 title: Auth state and navigation skeleton
-last_updated: 2026-05-08 (story 3.3)
+last_updated: 2026-05-08 (story 3.4)
 
 context_summary: |
   Build the in-memory auth provider, the AppNavigator that swaps stacks based on
@@ -67,7 +67,7 @@ stories:
   - id: 3.4
     title: Implement navigation/AppRoutes.tsx with bottom tab navigator hosting Landing
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.1
     acceptance_criteria:
