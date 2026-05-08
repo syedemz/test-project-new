@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 import labels from '@/labels/labels.json';
@@ -17,6 +18,9 @@ import {
   validatePassword,
   validateUsername,
 } from '@/Helper/validationHelper';
+import { readUsers, writeUsers } from '@/Helper/storageHelper';
+import type { StoredUser } from '@/Helper/storageHelper';
+import { SEED_CREDENTIAL } from '@/Helper/seedCredentials';
 import type { Theme } from '@/theme/theme';
 
 // ---------------------------------------------------------------------------
@@ -135,6 +139,23 @@ function createStyles(theme: Theme) {
       color: theme.colors.status.error,
       marginTop: theme.spacing.xs,
     },
+    submitButton: {
+      backgroundColor: theme.colors.accent.primary,
+      borderRadius: theme.radii.md,
+      paddingVertical: theme.spacing.md,
+      alignItems: 'center',
+      marginTop: theme.spacing.xl,
+    },
+    submitButtonText: {
+      ...textStyles.label.md,
+      color: theme.colors.text.inverse,
+    },
+    storageErrorText: {
+      ...textStyles.caption,
+      color: theme.colors.status.error,
+      marginTop: theme.spacing.sm,
+      textAlign: 'center',
+    },
   });
 }
 
@@ -147,8 +168,15 @@ function createStyles(theme: Theme) {
  *
  * Renders four fields (email, username, password, confirmPassword) with
  * per-field label, placeholder, and inline error text. Validation fires on
- * blur for all fields; confirmPassword mismatch also fires on blur (and will
- * fire again on submit in story 4.2). No submit wiring in this story.
+ * blur for each field; the submit handler runs the full validation suite,
+ * enforces username and email uniqueness against registered users and the
+ * seed credential, and persists a new `StoredUser` record via `writeUsers`.
+ *
+ * State transitions:
+ * - `success` flips to `true` after a successful `writeUsers` call; story 4.3
+ *   will render the success modal on this flag.
+ * - `storageError` holds the storage-failure copy (from `register_storage_error`)
+ *   when `writeUsers` rejects. The form remains editable on failure.
  */
 const RegisterScreen: React.FC = () => {
   const theme = useTheme();
@@ -163,6 +191,7 @@ const RegisterScreen: React.FC = () => {
   const [usernameError, setUsernameError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null);
+  const [storageError, setStorageError] = useState<string | null>(null);
 
   const handleEmailBlur = useCallback(() => {
     const result = validateEmail(email);
@@ -179,12 +208,92 @@ const RegisterScreen: React.FC = () => {
     setPasswordError(result.ok ? null : passwordErrorText(result.reason));
   }, [password]);
 
-  // confirmPassword mismatch fires on blur AND on submit (story 4.2),
+  // confirmPassword mismatch fires on blur AND on submit,
   // but NOT on every keystroke — architecture.md is explicit about this.
   const handleConfirmPasswordBlur = useCallback(() => {
     const result = validateConfirmPassword(password, confirmPassword);
     setConfirmPasswordError(result.ok ? null : confirmPasswordErrorText());
   }, [password, confirmPassword]);
+
+  const handleSubmit = useCallback(async () => {
+    // Run the full validation suite across all four fields.
+    const emailResult = validateEmail(email);
+    const usernameResult = validateUsername(username);
+    const passwordResult = validatePassword(password);
+    const confirmResult = validateConfirmPassword(password, confirmPassword);
+
+    const newEmailError = emailResult.ok ? null : emailErrorText(emailResult.reason);
+    const newPasswordError = passwordResult.ok ? null : passwordErrorText(passwordResult.reason);
+    const newConfirmError = confirmResult.ok ? null : confirmPasswordErrorText();
+
+    // Username field can also surface a uniqueness error; compute format error first.
+    const formatUsernameError = usernameResult.ok ? null : usernameErrorText(usernameResult.reason);
+
+    setEmailError(newEmailError);
+    setPasswordError(newPasswordError);
+    setConfirmPasswordError(newConfirmError);
+    // Username error may be overwritten below once uniqueness is checked.
+    setUsernameError(formatUsernameError);
+
+    const hasFormatErrors =
+      newEmailError !== null ||
+      formatUsernameError !== null ||
+      newPasswordError !== null ||
+      newConfirmError !== null;
+
+    if (hasFormatErrors) {
+      return;
+    }
+
+    // Read existing users to enforce uniqueness.
+    let existingUsers: StoredUser[];
+    try {
+      existingUsers = await readUsers();
+    } catch {
+      setStorageError(labels.register_storage_error.en);
+      return;
+    }
+
+    const trimmedUsername = username.trim();
+    const lowercasedUsername = trimmedUsername.toLowerCase();
+    const lowercasedEmail = email.trim().toLowerCase();
+
+    // Enforce username uniqueness: registered list + seed.
+    const usernameInUse =
+      existingUsers.some((u) => u.username.toLowerCase() === lowercasedUsername) ||
+      SEED_CREDENTIAL.username.toLowerCase() === lowercasedUsername;
+
+    if (usernameInUse) {
+      setUsernameError(labels.register_validation_username_in_use.en);
+      return;
+    }
+
+    // Enforce email uniqueness: registered list only.
+    const emailInUse = existingUsers.some((u) => u.email === lowercasedEmail);
+
+    if (emailInUse) {
+      setEmailError(labels.register_validation_email_in_use.en);
+      return;
+    }
+
+    // All checks pass — build the record and persist.
+    const newRecord: StoredUser = {
+      username: trimmedUsername,
+      email: lowercasedEmail,
+      password,
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      await writeUsers([...existingUsers, newRecord]);
+    } catch {
+      setStorageError(labels.register_storage_error.en);
+      return;
+    }
+
+    // Clear any stale storage error. success state and modal are wired in story 4.3.
+    setStorageError(null);
+  }, [email, username, password, confirmPassword]);
 
   return (
     <KeyboardAvoidingView
@@ -197,7 +306,9 @@ const RegisterScreen: React.FC = () => {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={styles.screenTitle}>{labels.register_screen_title.en}</Text>
+        <Text testID="register-screen-title" style={styles.screenTitle}>
+          {labels.register_screen_title.en}
+        </Text>
 
         {/* Email field */}
         <View style={styles.fieldContainer}>
@@ -285,6 +396,23 @@ const RegisterScreen: React.FC = () => {
             </Text>
           )}
         </View>
+
+        {/* Submit button */}
+        <TouchableOpacity
+          testID="register-submit-button"
+          style={styles.submitButton}
+          onPress={handleSubmit}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.submitButtonText}>{labels.register_button.en}</Text>
+        </TouchableOpacity>
+
+        {/* Storage-failure inline error (non-blocking) */}
+        {storageError !== null && (
+          <Text testID="register-storage-error" style={styles.storageErrorText}>
+            {storageError}
+          </Text>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

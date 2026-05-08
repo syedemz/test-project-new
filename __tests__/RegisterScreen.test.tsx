@@ -1,24 +1,49 @@
 /**
- * Component tests for RegisterScreen — story 4.1 acceptance criteria.
+ * Component tests for RegisterScreen — story 4.1 and story 4.2 acceptance criteria.
  *
- * Covers:
+ * Story 4.1 covers:
  *   1. Render with default state — all four fields and screen title render;
  *      no error text is visible.
  *   2. Blur each field with invalid input → the matching error label renders.
  *   3. Blur each field with valid input → no error renders.
  *   4. confirmPassword mismatch renders only after blur, not on every keystroke.
  *
+ * Story 4.2 covers:
+ *   5. Submit with invalid fields — all inline errors render, no writeUsers call.
+ *   6. Username collision (registered list and seed) — username-in-use error renders.
+ *   7. Email collision (registered list) — email-in-use error renders.
+ *   8. Successful write — writeUsers called exactly once with the correct record shape.
+ *   9. Storage write failure — register_storage_error renders, form stays editable.
+ *
  * ThemeProvider is always provided because RegisterScreen calls useTheme().
+ * storageHelper is mocked so tests never hit AsyncStorage.
  */
 
 import React from 'react';
-import { fireEvent, render } from '@testing-library/react-native';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import RegisterScreen from '@/screens/RegisterScreen';
 import labels from '@/labels/labels.json';
+import type { StoredUser } from '@/Helper/storageHelper';
 
 // ---------------------------------------------------------------------------
-// Test helper
+// Mock storageHelper — must appear before any import that pulls the module.
+// ---------------------------------------------------------------------------
+
+jest.mock('@/Helper/storageHelper', () => ({
+  readUsers: jest.fn(),
+  writeUsers: jest.fn(),
+}));
+
+// Import after mock so we get the mocked version.
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const storageHelper = require('@/Helper/storageHelper') as {
+  readUsers: jest.Mock;
+  writeUsers: jest.Mock;
+};
+
+// ---------------------------------------------------------------------------
+// Test helpers
 // ---------------------------------------------------------------------------
 
 /**
@@ -34,6 +59,48 @@ function renderScreen() {
   );
 }
 
+/** Valid field values used across story 4.2 submit tests. */
+const VALID_EMAIL = 'alice@example.com';
+const VALID_USERNAME = 'alice99';
+const VALID_PASSWORD = 'Secure1234';
+const VALID_CONFIRM = 'Secure1234';
+
+/**
+ * Fills all four fields with the supplied values and presses the submit button.
+ *
+ * @param queries - The RNTL render result.
+ * @param overrides - Per-field overrides; omitted fields use the valid defaults.
+ */
+async function fillAndSubmit(
+  queries: ReturnType<typeof renderScreen>,
+  overrides: {
+    email?: string;
+    username?: string;
+    password?: string;
+    confirmPassword?: string;
+  } = {},
+) {
+  const { getByTestId } = queries;
+  const email = overrides.email ?? VALID_EMAIL;
+  const username = overrides.username ?? VALID_USERNAME;
+  const password = overrides.password ?? VALID_PASSWORD;
+  const confirmPassword = overrides.confirmPassword ?? VALID_CONFIRM;
+
+  fireEvent.changeText(getByTestId('register-email-input'), email);
+  fireEvent.changeText(getByTestId('register-username-input'), username);
+  fireEvent.changeText(getByTestId('register-password-input'), password);
+  fireEvent.changeText(getByTestId('register-confirm-password-input'), confirmPassword);
+
+  await act(async () => {
+    fireEvent.press(getByTestId('register-submit-button'));
+  });
+}
+
+/** Reset all mocks between tests so state doesn't leak. */
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
 // ---------------------------------------------------------------------------
 // AC1 — render with default state
 // ---------------------------------------------------------------------------
@@ -45,8 +112,10 @@ describe('given RegisterScreen is rendered with default state, when the tree is 
   });
 
   it('then the register_screen_title label text is rendered', () => {
-    const { getByText } = renderScreen();
-    expect(getByText(labels.register_screen_title.en)).toBeTruthy();
+    const { getByTestId } = renderScreen();
+    expect(getByTestId('register-screen-title').props.children).toBe(
+      labels.register_screen_title.en,
+    );
   });
 
   it('then all four field labels are rendered', () => {
@@ -269,5 +338,281 @@ describe('given the confirmPassword field has a mismatched value typed character
 
     const errorEl = getByTestId('register-confirm-password-error');
     expect(errorEl.props.children).toBe(labels.register_validation_password_mismatch.en);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC1: submit with invalid fields shows errors, no write occurs
+// ---------------------------------------------------------------------------
+
+describe('given all fields are empty, when the submit button is pressed', () => {
+  it('then inline errors render for email, username, password, and confirmPassword', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, {
+      email: '',
+      username: '',
+      password: '',
+      confirmPassword: '',
+    });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-email-error').props.children).toBe(
+        labels.register_validation_email_invalid.en,
+      );
+      expect(queries.getByTestId('register-username-error').props.children).toBe(
+        labels.register_validation_username_invalid.en,
+      );
+      expect(queries.getByTestId('register-password-error').props.children).toBe(
+        labels.register_validation_password_weak.en,
+      );
+    });
+  });
+
+  it('then writeUsers is NOT called when format validation fails', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, {
+      email: 'not-an-email',
+      username: 'ok_user',
+      password: 'Secure1234',
+      confirmPassword: 'Secure1234',
+    });
+
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+describe('given a valid form with mismatched passwords, when the submit button is pressed', () => {
+  it('then the confirmPassword mismatch error renders and writeUsers is NOT called', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, { confirmPassword: 'DifferentPass1' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-confirm-password-error').props.children).toBe(
+        labels.register_validation_password_mismatch.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+describe('given a weak password, when the submit button is pressed', () => {
+  it('then the password_weak error renders and writeUsers is NOT called', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, { password: 'short', confirmPassword: 'short' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-password-error').props.children).toBe(
+        labels.register_validation_password_weak.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC2: username collision against registered list
+// ---------------------------------------------------------------------------
+
+describe('given a username already in the registered list, when the submit button is pressed', () => {
+  it('then the username-in-use error renders and writeUsers is NOT called', async () => {
+    const existing: StoredUser[] = [
+      {
+        username: 'AliceUser',
+        email: 'existing@example.com',
+        password: 'Pass1234',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    storageHelper.readUsers.mockResolvedValue(existing);
+    const queries = renderScreen();
+
+    // Submit with same username in different case — should still collide.
+    await fillAndSubmit(queries, { username: 'aliceuser', email: 'new@example.com' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-username-error').props.children).toBe(
+        labels.register_validation_username_in_use.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC2: username collision against seed
+// ---------------------------------------------------------------------------
+
+describe('given the seed username "testuser" is submitted, when the submit button is pressed', () => {
+  it('then the username-in-use error renders (seed collision) and writeUsers is NOT called', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, { username: 'testuser' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-username-error').props.children).toBe(
+        labels.register_validation_username_in_use.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+
+  it('then the username-in-use error renders for case-insensitive seed collision (TESTUSER)', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, { username: 'TESTUSER' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-username-error').props.children).toBe(
+        labels.register_validation_username_in_use.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC3: email collision against registered list
+// ---------------------------------------------------------------------------
+
+describe('given an email already in the registered list, when the submit button is pressed', () => {
+  it('then the email-in-use error renders and writeUsers is NOT called', async () => {
+    const existing: StoredUser[] = [
+      {
+        username: 'otheralice',
+        email: 'alice@example.com',
+        password: 'Pass1234',
+        createdAt: new Date().toISOString(),
+      },
+    ];
+    storageHelper.readUsers.mockResolvedValue(existing);
+    const queries = renderScreen();
+
+    // Submit with the same email (emails are stored lowercased; compare lowercased).
+    await fillAndSubmit(queries, { username: 'brandnewuser', email: 'alice@example.com' });
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-email-error').props.children).toBe(
+        labels.register_validation_email_in_use.en,
+      );
+    });
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC4 + AC6: successful write produces the correct StoredUser shape
+// and writeUsers is called exactly once with [...existing, newRecord].
+// ---------------------------------------------------------------------------
+
+describe('given a fully valid form with no collisions, when the submit button is pressed', () => {
+  it('then writeUsers is called exactly once with a record matching the StoredUser shape', async () => {
+    const existing: StoredUser[] = [];
+    storageHelper.readUsers.mockResolvedValue(existing);
+    storageHelper.writeUsers.mockResolvedValue(undefined);
+
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries, {
+      email: 'Alice@Example.Com',
+      username: '  Alice99  ',
+      password: 'Secure1234',
+      confirmPassword: 'Secure1234',
+    });
+
+    await waitFor(() => {
+      expect(storageHelper.writeUsers).toHaveBeenCalledTimes(1);
+    });
+
+    const [calledWith] = storageHelper.writeUsers.mock.calls[0] as [StoredUser[]];
+    expect(calledWith).toHaveLength(1);
+
+    const record = calledWith[0];
+    // Username trimmed from original case, NOT lowercased.
+    expect(record.username).toBe('Alice99');
+    // Email lowercased.
+    expect(record.email).toBe('alice@example.com');
+    // Password stored as-is (plaintext).
+    expect(record.password).toBe('Secure1234');
+    // createdAt is an ISO 8601 string.
+    expect(() => new Date(record.createdAt)).not.toThrow();
+    expect(new Date(record.createdAt).toISOString()).toBe(record.createdAt);
+  });
+
+  it('then writeUsers is called with [...existingUsers, newRecord] when list is non-empty', async () => {
+    const existing: StoredUser[] = [
+      {
+        username: 'bob',
+        email: 'bob@example.com',
+        password: 'Pass1234',
+        createdAt: '2026-01-01T00:00:00.000Z',
+      },
+    ];
+    storageHelper.readUsers.mockResolvedValue(existing);
+    storageHelper.writeUsers.mockResolvedValue(undefined);
+
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(storageHelper.writeUsers).toHaveBeenCalledTimes(1);
+    });
+
+    const [calledWith] = storageHelper.writeUsers.mock.calls[0] as [StoredUser[]];
+    // Array must start with the existing record unchanged.
+    expect(calledWith[0]).toEqual(existing[0]);
+    expect(calledWith).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Story 4.2 — AC5: storage write failure renders storage-error and form stays editable
+// ---------------------------------------------------------------------------
+
+describe('given writeUsers rejects, when the submit button is pressed with valid data', () => {
+  it('then the register_storage_error label renders', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    storageHelper.writeUsers.mockRejectedValue(new Error('storage_write_failed: could not write'));
+
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-storage-error').props.children).toBe(
+        labels.register_storage_error.en,
+      );
+    });
+  });
+
+  it('then the form remains editable (submit button and inputs are still in the tree)', async () => {
+    storageHelper.readUsers.mockResolvedValue([]);
+    storageHelper.writeUsers.mockRejectedValue(new Error('storage_write_failed: could not write'));
+
+    const queries = renderScreen();
+
+    await fillAndSubmit(queries);
+
+    await waitFor(() => {
+      expect(queries.getByTestId('register-storage-error')).toBeTruthy();
+    });
+
+    // All four inputs still present and interactive.
+    expect(queries.getByTestId('register-email-input')).toBeTruthy();
+    expect(queries.getByTestId('register-username-input')).toBeTruthy();
+    expect(queries.getByTestId('register-password-input')).toBeTruthy();
+    expect(queries.getByTestId('register-confirm-password-input')).toBeTruthy();
+    // Submit button still in the tree.
+    expect(queries.getByTestId('register-submit-button')).toBeTruthy();
   });
 });

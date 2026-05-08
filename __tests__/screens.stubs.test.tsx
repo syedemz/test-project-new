@@ -41,12 +41,14 @@ describe('given RegisterScreen is rendered, when the tree is queried', () => {
   });
 
   it('then the register_screen_title label value is rendered', () => {
-    const { getByText } = render(
+    const { getByTestId } = render(
       <ThemeProvider>
         <RegisterScreen />
       </ThemeProvider>,
     );
-    expect(getByText(labels.register_screen_title.en)).toBeTruthy();
+    expect(getByTestId('register-screen-title').props.children).toBe(
+      labels.register_screen_title.en,
+    );
   });
 });
 

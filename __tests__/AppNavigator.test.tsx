@@ -19,6 +19,7 @@ import { act, fireEvent, render } from '@testing-library/react-native';
 import { Text, TouchableOpacity } from 'react-native';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import AppNavigator from '@/navigation/AppNavigator';
+import { ThemeProvider } from '@/theme/ThemeProvider';
 
 // ---------------------------------------------------------------------------
 // Test harness
@@ -39,20 +40,23 @@ function SignInTrigger(): React.JSX.Element {
 }
 
 /**
- * Renders `<AuthProvider><AppNavigator /></AuthProvider>` with an additional
- * `<SignInTrigger>` sibling placed outside AppNavigator but inside the same
- * AuthProvider, so tests can mutate auth state.
+ * Renders `<ThemeProvider><AuthProvider><AppNavigator /></AuthProvider></ThemeProvider>`
+ * with an additional `<SignInTrigger>` sibling placed outside AppNavigator but
+ * inside the same AuthProvider, so tests can mutate auth state.
  *
- * Note: SignInTrigger is a sibling of AppNavigator, not a child, because
- * AppNavigator renders a NavigationContainer and we must not nest
+ * ThemeProvider is required because RegisterScreen (part of the pre-auth stack)
+ * calls useTheme(). SignInTrigger is a sibling of AppNavigator, not a child,
+ * because AppNavigator renders a NavigationContainer and we must not nest
  * NavigationContainers.
  */
 function TestRoot(): React.JSX.Element {
   return (
-    <AuthProvider>
-      <SignInTrigger />
-      <AppNavigator />
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <SignInTrigger />
+        <AppNavigator />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

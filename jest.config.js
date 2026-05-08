@@ -1,6 +1,11 @@
 const config = {
   preset: 'jest-expo',
 
+  // Global setup that runs after the test framework is installed.
+  // Provides the official AsyncStorage mock so any test suite that imports
+  // modules depending on AsyncStorage does not fail with "NativeModule: null".
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.ts'],
+
   // Resolve @/* path alias to src/* so Jest can process imports that use the
   // same alias configured in tsconfig.json and babel.config.js.
   moduleNameMapper: {
