@@ -24,7 +24,7 @@ phases:
 - phase: 4
   title: Register screen
   file: implementationplan/phase-4-register-screen.md
-  ready: false
+  ready: true
   done: false
 
 - phase: 5
