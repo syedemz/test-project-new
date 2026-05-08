@@ -1,5 +1,5 @@
 /**
- * Component tests for LoginScreen — story 5.1 and 5.2 acceptance criteria.
+ * Component tests for LoginScreen — story 5.1, 5.2, and 5.3 acceptance criteria.
  *
  * Story 5.1 covers:
  *   1. Render with default state — screen root, title, both fields, login
@@ -22,6 +22,21 @@
  *      login with abc/Test\@123 fails (signIn NOT called).
  *  10. Storage rejection: lookupCredential rejects; signIn NOT called; no crash.
  *
+ * Story 5.3 covers:
+ *  11. Credential error renders with login-inline-error testID and
+ *      login_invalid_credentials.en text after unknown-username failure.
+ *  12. Credential error renders the same text after wrong-password failure
+ *      (genericness assertion).
+ *  13. Credential error is positioned below the submit button (tree-order).
+ *  14. Credential error color matches lightColors.status.error (via StyleSheet.flatten).
+ *  15. Auto-clear: changing username field clears the credential error.
+ *  16. Auto-clear: changing password field clears the credential error.
+ *  17. On successful login, login-inline-error is absent from the tree.
+ *  18. Storage error renders with login-storage-error testID and
+ *      login_storage_error.en text; login-inline-error is absent; signIn NOT called.
+ *  19. Independence: credential failure does NOT render login-storage-error.
+ *  20. Independence: storage rejection does NOT render login-inline-error.
+ *
  * ThemeProvider + AuthProvider are always provided. useNavigation is mocked
  * globally so navigation.navigate can be asserted without a NavigationContainer.
  * For tests that need to spy on signIn, useAuth is overridden per-test via
@@ -32,12 +47,14 @@
  */
 
 import React from 'react';
+import { StyleSheet } from 'react-native';
 import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { AuthProvider } from '@/auth/AuthContext';
 import LoginScreen from '@/screens/LoginScreen';
 import labels from '@/labels/labels.json';
 import { AUTH_ROUTES } from '@/navigation/AuthRoutes';
+import { lightColors } from '@/theme/theme';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as credentialHelper from '@/Helper/credentialHelper';
 import * as AuthContextModule from '@/auth/AuthContext';
@@ -469,5 +486,442 @@ describe('given lookupCredential rejects with a storage error, when the submit b
     expect(rejectionLeaks).toHaveLength(0);
 
     consoleSpy.mockRestore();
+  });
+});
+
+// ===========================================================================
+// Story 5.3 — inline credential error, storage error, auto-clear, independence
+// ===========================================================================
+
+// ---------------------------------------------------------------------------
+// AC1 (unknown username) + AC3 (genericness, part 1)
+//
+// After a failed login with an unknown username, login-inline-error renders
+// with the login_invalid_credentials.en copy.
+// ---------------------------------------------------------------------------
+
+describe('given empty AsyncStorage, when login is submitted with an unknown username', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then login-inline-error renders with login_invalid_credentials.en text', async () => {
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(() => {
+      const errorEl = queries.getByTestId('login-inline-error');
+      expect(errorEl.props.children).toBe(labels.login_invalid_credentials.en);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC3 (genericness, part 2) — same text for wrong-password failure
+// ---------------------------------------------------------------------------
+
+describe('given empty AsyncStorage, when login is submitted with the seed username but wrong password', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then login-inline-error renders with the same login_invalid_credentials.en text (generic error)', async () => {
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'testuser', 'WrongPassword1');
+
+    await waitFor(() => {
+      const errorEl = queries.getByTestId('login-inline-error');
+      // Identical text to the unknown-username case — genericness confirmed.
+      expect(errorEl.props.children).toBe(labels.login_invalid_credentials.en);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC1 — position: login-inline-error is below the submit button
+//
+// Tree-order assertion: the submit button's testID appears before the error
+// testID in the rendered element array returned by getAllByTestId.
+// We use UNSAFE_getAllByType(Text) but filter by testID. The more robust
+// approach is: after submit, queryAllByTestId returns [button, inline-error]
+// in DOM order — but RNTL's queryAllByTestId returns all matches across the
+// tree, not in a guaranteed layout order. Instead we check that getByTestId
+// for the button does not throw (it exists), and that the error element's
+// parent chain is inside the ScrollView that is also the button's parent — i.e.,
+// both live in the same container and the error has no layout ancestor that
+// would place it above the button.
+//
+// Practical assertion: render tree is deterministic; we verify by querying the
+// button first (must exist), then querying the error (must also exist), and
+// that the component renders the button JSX before the error JSX in its return.
+// We assert this via UNSAFE_getAllByProps matching testIDs in order.
+// ---------------------------------------------------------------------------
+
+describe('given a failed login, when the tree order is checked', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then login-inline-error appears after login-submit-button in the rendered tree', async () => {
+    const queries = renderScreen();
+
+    // Before submit: button is present, error is absent.
+    expect(queries.getByTestId('login-submit-button')).toBeTruthy();
+    expect(queries.queryByTestId('login-inline-error')).toBeNull();
+
+    // Submit with unknown user to trigger error.
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(queries.getByTestId('login-submit-button')).toBeTruthy();
+      expect(queries.getByTestId('login-inline-error')).toBeTruthy();
+    });
+
+    // Position assertion using toJSON tree-walk.
+    //
+    // We traverse the JSON representation of the rendered tree and record the
+    // encounter order of nodes by testID. Because toJSON() produces a depth-first
+    // pre-order traversal, a node that appears earlier in the source JSX will
+    // have a lower index in this traversal.
+    //
+    // Expected order: login-submit-button → login-inline-error → login-register-link
+    type JsonNode = {
+      type: string;
+      props: Record<string, unknown>;
+      children: JsonNode[] | null;
+    };
+
+    function collectTestIDs(node: JsonNode, result: string[]): void {
+      if (node.props.testID && typeof node.props.testID === 'string') {
+        result.push(node.props.testID);
+      }
+      if (node.children) {
+        for (const child of node.children) {
+          if (child && typeof child === 'object' && 'props' in child) {
+            collectTestIDs(child, result);
+          }
+        }
+      }
+    }
+
+    const jsonTree = queries.toJSON() as JsonNode;
+    const encounterOrder: string[] = [];
+    collectTestIDs(jsonTree, encounterOrder);
+
+    const buttonIdx = encounterOrder.indexOf('login-submit-button');
+    const errorIdx = encounterOrder.indexOf('login-inline-error');
+    const linkIdx = encounterOrder.indexOf('login-register-link');
+
+    // All three must be present.
+    expect(buttonIdx).toBeGreaterThanOrEqual(0);
+    expect(errorIdx).toBeGreaterThanOrEqual(0);
+    expect(linkIdx).toBeGreaterThanOrEqual(0);
+
+    // Order: button < inline-error < register-link
+    expect(buttonIdx).toBeLessThan(errorIdx);
+    expect(errorIdx).toBeLessThan(linkIdx);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC2 — color: login-inline-error color matches theme.colors.status.error
+//
+// StyleSheet.flatten resolves the style IDs used in the component back to
+// plain style objects so we can assert the color value directly.
+// We compare against lightColors.status.error — ThemeProvider defaults to
+// light mode, so the rendered component uses lightColors.
+// ---------------------------------------------------------------------------
+
+describe('given a failed login, when the inline error color is inspected', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then the login-inline-error color equals lightColors.status.error', async () => {
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(async () => {
+      const errorEl = queries.getByTestId('login-inline-error');
+      const flatStyle = StyleSheet.flatten(errorEl.props.style);
+      expect(flatStyle.color).toBe(lightColors.status.error);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC4 — auto-clear on username change
+// ---------------------------------------------------------------------------
+
+describe('given the credential error is visible, when the username field changes', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then the login-inline-error is removed from the tree', async () => {
+    const queries = renderScreen();
+
+    // Trigger credential error.
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(queries.getByTestId('login-inline-error')).toBeTruthy();
+    });
+
+    // Change the username field — error must disappear.
+    fireEvent.changeText(queries.getByTestId('login-username-input'), 'newusername');
+
+    await waitFor(() => {
+      expect(queries.queryByTestId('login-inline-error')).toBeNull();
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC4 — auto-clear on password change
+// ---------------------------------------------------------------------------
+
+describe('given the credential error is visible, when the password field changes', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then the login-inline-error is removed from the tree', async () => {
+    const queries = renderScreen();
+
+    // Trigger credential error.
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(queries.getByTestId('login-inline-error')).toBeTruthy();
+    });
+
+    // Change the password field — error must disappear.
+    fireEvent.changeText(queries.getByTestId('login-password-input'), 'NewPassword1');
+
+    await waitFor(() => {
+      expect(queries.queryByTestId('login-inline-error')).toBeNull();
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC5 — on success, login-inline-error is absent
+// ---------------------------------------------------------------------------
+
+describe('given empty AsyncStorage, when login succeeds with seed credentials', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then login-inline-error is absent (queryByTestId returns null)', async () => {
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'testuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(mockSignIn).toHaveBeenCalledTimes(1);
+      expect(queries.queryByTestId('login-inline-error')).toBeNull();
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// AC6 — storage error: login-storage-error renders; login-inline-error absent;
+// signIn NOT called.
+// ---------------------------------------------------------------------------
+
+describe('given lookupCredential rejects, when the submit button is pressed', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+  let lookupSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+    lookupSpy = jest
+      .spyOn(credentialHelper, 'lookupCredential')
+      .mockRejectedValueOnce(new Error('storage_read_failed: mock'));
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+    lookupSpy.mockRestore();
+  });
+
+  it('then login-storage-error renders with login_storage_error.en text', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'testuser', 'Test@123');
+
+    await waitFor(() => {
+      const storageEl = queries.getByTestId('login-storage-error');
+      expect(storageEl.props.children).toBe(labels.login_storage_error.en);
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('then login-inline-error is absent when only a storage rejection occurred', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'testuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(queries.getByTestId('login-storage-error')).toBeTruthy();
+      expect(queries.queryByTestId('login-inline-error')).toBeNull();
+    });
+
+    consoleSpy.mockRestore();
+  });
+
+  it('then signIn is NOT called on a storage rejection', async () => {
+    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'testuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(mockSignIn).not.toHaveBeenCalled();
+    });
+
+    consoleSpy.mockRestore();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Independence: credential failure does NOT render login-storage-error
+// ---------------------------------------------------------------------------
+
+describe('given empty AsyncStorage, when login fails with a credential error', () => {
+  let mockSignIn: jest.Mock;
+  let useAuthSpy: jest.SpyInstance;
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+    mockSignIn = jest.fn();
+    useAuthSpy = jest.spyOn(AuthContextModule, 'useAuth').mockReturnValue({
+      isAuthenticated: false,
+      signIn: mockSignIn,
+      signOut: jest.fn(),
+    });
+  });
+
+  afterEach(() => {
+    useAuthSpy.mockRestore();
+  });
+
+  it('then login-storage-error is absent (credential error does not trigger storage error)', async () => {
+    const queries = renderScreen();
+
+    await submitLogin(queries, 'nosuchuser', 'Test@123');
+
+    await waitFor(() => {
+      expect(queries.getByTestId('login-inline-error')).toBeTruthy();
+      expect(queries.queryByTestId('login-storage-error')).toBeNull();
+    });
   });
 });

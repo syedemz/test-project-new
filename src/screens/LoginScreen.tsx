@@ -79,6 +79,18 @@ function createStyles(theme: Theme) {
       ...textStyles.label.md,
       color: theme.colors.text.inverse,
     },
+    inlineError: {
+      ...textStyles.caption,
+      color: theme.colors.status.error,
+      marginTop: theme.spacing.sm,
+      textAlign: 'center',
+    },
+    storageErrorText: {
+      ...textStyles.caption,
+      color: theme.colors.status.error,
+      marginTop: theme.spacing.sm,
+      textAlign: 'center',
+    },
     registerLink: {
       marginTop: theme.spacing.lg,
       alignItems: 'center',
@@ -101,10 +113,17 @@ function createStyles(theme: Theme) {
  * placeholder sourced from labels.json. A login button is rendered below
  * the fields. A Register link navigates to the Register screen.
  *
- * Submit handling wired in story 5.2: calls lookupCredential with the trimmed
- * username and exact password, then calls signIn() on success. On storage
- * rejection, sets storageErrorVisible (story 5.3 binds the UI to this state).
- * Inline error UI is rendered in story 5.3.
+ * Submit flow (story 5.2):
+ *   - Calls lookupCredential with the trimmed username and exact password.
+ *   - On ok:true: calls signIn(); auth gate swaps to the post-auth stack.
+ *   - On ok:false: sets credentialErrorVisible to show the inline error.
+ *   - On storage rejection: sets storageErrorVisible; signIn is NOT called.
+ *
+ * Error surfaces (story 5.3):
+ *   - Credential error: generic <Text testID="login-inline-error"> rendered
+ *     directly below the login button. Cleared when either field changes.
+ *   - Storage error: separate <Text testID="login-storage-error"> below the
+ *     credential error element. Independent state; does not auto-clear.
  */
 const LoginScreen: React.FC = () => {
   const theme = useTheme();
@@ -116,13 +135,43 @@ const LoginScreen: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
-  // Set to true when a storage read fails during login (UI wired in story 5.3).
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  // True when a credential lookup returns { ok: false } (unknown user or wrong password).
+  const [credentialErrorVisible, setCredentialErrorVisible] = useState<boolean>(false);
+
+  // True when a storage read fails during login (AsyncStorage rejection).
   const [storageErrorVisible, setStorageErrorVisible] = useState<boolean>(false);
 
   const handleNavigateToRegister = useCallback(() => {
     navigation.navigate(AUTH_ROUTES.REGISTER);
   }, [navigation]);
+
+  /**
+   * Wraps `setUsername` so that any change to the username field automatically
+   * clears the credential error. Auto-clear covers both inputs per AC #4.
+   */
+  const handleUsernameChange = useCallback(
+    (text: string) => {
+      if (credentialErrorVisible) {
+        setCredentialErrorVisible(false);
+      }
+      setUsername(text);
+    },
+    [credentialErrorVisible],
+  );
+
+  /**
+   * Wraps `setPassword` so that any change to the password field automatically
+   * clears the credential error. Auto-clear covers both inputs per AC #4.
+   */
+  const handlePasswordChange = useCallback(
+    (text: string) => {
+      if (credentialErrorVisible) {
+        setCredentialErrorVisible(false);
+      }
+      setPassword(text);
+    },
+    [credentialErrorVisible],
+  );
 
   const handleSubmit = useCallback(async () => {
     const trimmedUsername = username.trim();
@@ -131,16 +180,20 @@ const LoginScreen: React.FC = () => {
     try {
       result = await lookupCredential(trimmedUsername, password);
     } catch {
-      // Storage failure — surface state for story 5.3 UI; do NOT sign in.
+      // Storage failure — clear any prior credential error, surface storage error.
+      setCredentialErrorVisible(false);
       setStorageErrorVisible(true);
       return;
     }
 
     if (result.ok) {
+      setCredentialErrorVisible(false);
       signIn();
+    } else {
+      // Credential failure (unknown user or wrong password) — show generic error.
+      setStorageErrorVisible(false);
+      setCredentialErrorVisible(true);
     }
-    // On { ok: false }: credential failure path — signIn is NOT called.
-    // The inline credential-error UI is rendered in story 5.3.
   }, [username, password, signIn]);
 
   return (
@@ -165,7 +218,7 @@ const LoginScreen: React.FC = () => {
             testID="login-username-input"
             style={styles.input}
             value={username}
-            onChangeText={setUsername}
+            onChangeText={handleUsernameChange}
             placeholder={labels.login_username_placeholder.en}
             placeholderTextColor={theme.colors.text.tertiary}
             autoCapitalize="none"
@@ -180,7 +233,7 @@ const LoginScreen: React.FC = () => {
             testID="login-password-input"
             style={styles.input}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={handlePasswordChange}
             placeholder={labels.login_password_placeholder.en}
             placeholderTextColor={theme.colors.text.tertiary}
             secureTextEntry={true}
@@ -198,6 +251,20 @@ const LoginScreen: React.FC = () => {
         >
           <Text style={styles.submitButtonText}>{labels.login_button.en}</Text>
         </TouchableOpacity>
+
+        {/* Credential error — rendered below the button on { ok: false } */}
+        {credentialErrorVisible && (
+          <Text testID="login-inline-error" style={styles.inlineError}>
+            {labels.login_invalid_credentials.en}
+          </Text>
+        )}
+
+        {/* Storage error — rendered when AsyncStorage read rejects */}
+        {storageErrorVisible && (
+          <Text testID="login-storage-error" style={styles.storageErrorText}>
+            {labels.login_storage_error.en}
+          </Text>
+        )}
 
         {/* Register link */}
         <TouchableOpacity
