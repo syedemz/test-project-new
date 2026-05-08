@@ -1,5 +1,5 @@
 project: test-project-new
-last_updated: 2026-05-08
+last_updated: 2026-05-09
 
 phases:
 
@@ -25,12 +25,12 @@ phases:
   title: Register screen
   file: implementationplan/phase-4-register-screen.md
   ready: true
-  done: false
+  done: true
 
 - phase: 5
   title: Login screen
   file: implementationplan/phase-5-login-screen.md
-  ready: false
+  ready: true
   done: false
 
 - phase: 6
