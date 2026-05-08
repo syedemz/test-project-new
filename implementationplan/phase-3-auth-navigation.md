@@ -27,7 +27,7 @@ stories:
   - id: 3.1
     title: Stub screen components for Login, Register, and Landing
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on: []
     acceptance_criteria:
       - "Three files exist: `src/screens/LoginScreen.tsx`, `src/screens/RegisterScreen.tsx`, `src/screens/LandingScreen.tsx`. Each is a single-line functional component that renders a `<View>` with a stable `testID` (`login-screen-stub`, `register-screen-stub`, `landing-screen-stub` respectively)."
