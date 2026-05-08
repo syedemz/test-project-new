@@ -1,6 +1,6 @@
 phase: 3
 title: Auth state and navigation skeleton
-last_updated: 2026-05-08 (story 3.5)
+last_updated: 2026-05-08 (story 3.6)
 
 context_summary: |
   Build the in-memory auth provider, the AppNavigator that swaps stacks based on
@@ -96,7 +96,7 @@ stories:
   - id: 3.6
     title: Wire Android hardware back-button behavior at the auth boundary
     agent: frontenddeveloper
-    done: false
+    done: true
     depends_on:
       - 3.3
       - 3.5
