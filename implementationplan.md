@@ -19,7 +19,7 @@ phases:
   title: Auth state and navigation skeleton
   file: implementationplan/phase-3-auth-navigation.md
   ready: true
-  done: false
+  done: true
 
 - phase: 4
   title: Register screen
