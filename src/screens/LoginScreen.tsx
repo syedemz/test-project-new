@@ -60,20 +60,20 @@ function createStyles(theme: Theme) {
     },
     input: {
       ...textStyles.body.md,
-      backgroundColor: theme.colors.bg.input,
       color: theme.colors.text.primary,
-      borderWidth: 1,
-      borderColor: theme.colors.border.default,
-      borderRadius: theme.radii.md,
-      paddingHorizontal: theme.spacing.lg,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border.default,
       paddingVertical: theme.spacing.md,
     },
     submitButton: {
       backgroundColor: theme.colors.accent.primary,
-      borderRadius: theme.radii.md,
+      borderRadius: theme.radii.pill,
       paddingVertical: theme.spacing.md,
       alignItems: 'center',
       marginTop: theme.spacing.xl,
+    },
+    submitButtonDisabled: {
+      backgroundColor: theme.colors.accent.primaryDisabled,
     },
     submitButtonText: {
       ...textStyles.label.md,
@@ -173,6 +173,8 @@ const LoginScreen: React.FC = () => {
     [credentialErrorVisible],
   );
 
+  const isSubmitDisabled = username.trim() === '' || password === '';
+
   const handleSubmit = useCallback(async () => {
     const trimmedUsername = username.trim();
 
@@ -245,9 +247,10 @@ const LoginScreen: React.FC = () => {
         {/* Login button */}
         <TouchableOpacity
           testID="login-submit-button"
-          style={styles.submitButton}
+          style={[styles.submitButton, isSubmitDisabled && styles.submitButtonDisabled]}
           onPress={handleSubmit}
-          activeOpacity={0.8}
+          disabled={isSubmitDisabled}
+          activeOpacity={isSubmitDisabled ? 1 : 0.8}
         >
           <Text style={styles.submitButtonText}>{labels.login_button.en}</Text>
         </TouchableOpacity>
