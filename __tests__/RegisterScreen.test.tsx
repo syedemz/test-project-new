@@ -371,10 +371,13 @@ describe('given the confirmPassword field has a mismatched value typed character
 // Story 4.2 — AC1: submit with invalid fields shows errors, no write occurs
 // ---------------------------------------------------------------------------
 
-describe('given all fields are empty, when the submit button is pressed', () => {
-  it('then inline errors render for email, username, password, and confirmPassword', async () => {
+describe('given all fields are empty, when the submit button is queried', () => {
+  it('then the submit button is disabled and pressing it does not invoke readUsers/writeUsers', async () => {
     storageHelper.readUsers.mockResolvedValue([]);
     const queries = renderScreen();
+
+    const button = queries.getByTestId('register-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
 
     await fillAndSubmit(queries, {
       email: '',
@@ -383,19 +386,38 @@ describe('given all fields are empty, when the submit button is pressed', () => 
       confirmPassword: '',
     });
 
-    await waitFor(() => {
-      expect(queries.getByTestId('register-email-error').props.children).toBe(
-        labels.register_validation_email_invalid.en,
-      );
-      expect(queries.getByTestId('register-username-error').props.children).toBe(
-        labels.register_validation_username_invalid.en,
-      );
-      expect(queries.getByTestId('register-password-error').props.children).toBe(
-        labels.register_validation_password_weak.en,
-      );
-    });
+    expect(storageHelper.readUsers).not.toHaveBeenCalled();
+    expect(storageHelper.writeUsers).not.toHaveBeenCalled();
+  });
+});
+
+describe('given any single field is empty, when the submit button is queried', () => {
+  it('then the submit button is disabled when only confirmPassword is empty', () => {
+    const queries = renderScreen();
+
+    fireEvent.changeText(queries.getByTestId('register-email-input'), VALID_EMAIL);
+    fireEvent.changeText(queries.getByTestId('register-username-input'), VALID_USERNAME);
+    fireEvent.changeText(queries.getByTestId('register-password-input'), VALID_PASSWORD);
+    // confirmPassword remains empty.
+
+    const button = queries.getByTestId('register-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
   });
 
+  it('then the submit button becomes enabled once all four fields are non-empty', () => {
+    const queries = renderScreen();
+
+    fireEvent.changeText(queries.getByTestId('register-email-input'), VALID_EMAIL);
+    fireEvent.changeText(queries.getByTestId('register-username-input'), VALID_USERNAME);
+    fireEvent.changeText(queries.getByTestId('register-password-input'), VALID_PASSWORD);
+    fireEvent.changeText(queries.getByTestId('register-confirm-password-input'), VALID_CONFIRM);
+
+    const button = queries.getByTestId('register-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBeFalsy();
+  });
+});
+
+describe('given a partially-valid form is submitted, when format validation fails', () => {
   it('then writeUsers is NOT called when format validation fails', async () => {
     storageHelper.readUsers.mockResolvedValue([]);
     const queries = renderScreen();

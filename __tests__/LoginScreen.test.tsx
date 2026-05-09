@@ -191,6 +191,36 @@ describe('given LoginScreen is rendered with default state, when the tree is que
 // Story 5.1 — AC: Register link navigates to the Register screen
 // ---------------------------------------------------------------------------
 
+describe('given LoginScreen is rendered with empty fields, when the submit button is queried', () => {
+  it('then the submit button is disabled', () => {
+    const { getByTestId } = renderScreen();
+    const button = getByTestId('login-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('then the submit button stays disabled when only username is filled', () => {
+    const { getByTestId } = renderScreen();
+    fireEvent.changeText(getByTestId('login-username-input'), 'testuser');
+    const button = getByTestId('login-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('then the submit button stays disabled when only password is filled', () => {
+    const { getByTestId } = renderScreen();
+    fireEvent.changeText(getByTestId('login-password-input'), 'Test@123');
+    const button = getByTestId('login-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBe(true);
+  });
+
+  it('then the submit button becomes enabled when both fields are non-empty', () => {
+    const { getByTestId } = renderScreen();
+    fireEvent.changeText(getByTestId('login-username-input'), 'testuser');
+    fireEvent.changeText(getByTestId('login-password-input'), 'Test@123');
+    const button = getByTestId('login-submit-button');
+    expect(button.props.accessibilityState?.disabled).toBeFalsy();
+  });
+});
+
 describe('given LoginScreen is rendered, when the Register link is pressed', () => {
   it('then navigation.navigate is called with AUTH_ROUTES.REGISTER', () => {
     const { getByTestId } = renderScreen();
