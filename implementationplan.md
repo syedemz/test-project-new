@@ -31,10 +31,10 @@ phases:
   title: Login screen
   file: implementationplan/phase-5-login-screen.md
   ready: true
-  done: false
+  done: true
 
 - phase: 6
   title: Landing screen and end-to-end glue
   file: implementationplan/phase-6-landing-and-e2e.md
-  ready: false
+  ready: true
   done: false
