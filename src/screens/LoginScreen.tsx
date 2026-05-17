@@ -1,3 +1,4 @@
+/* eslint-disable no-restricted-imports -- legacy screen grandfathered before the component catalog (spec 2026-05-17). Remove when this screen is refactored to use @/components. */
 import React, { useCallback, useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
