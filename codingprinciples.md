@@ -17,6 +17,42 @@ The rules in this file have been checked for conflicts with the workspace `engin
 - Components must be **lean**: rendering + minimal local state. Anything beyond that (data shaping, formatting, validation, side-effect logic) belongs in a helper.
 - Props must be explicitly typed (see TypeScript section) and destructured at the top of the component.
 - One component per file. File name matches the component name (PascalCase, `.tsx`).
+- **Catalog components are mandatory.** Screens MUST import the following from `@/components` for the roles they cover: `Button`, `IconButton`, `TouchableArea`, `TextInput`, `FormField`, `Chip`, `ChipRow`, `Card`, `Screen`. Screens MAY NOT import `TouchableOpacity`, `Pressable`, `TextInput` (as the `react-native` primitive), `Switch`, or `Modal` directly from `react-native`. New variants are added to the catalog component, never inlined in a screen. See **Component Catalog** below.
+
+### Component Catalog
+
+The reusable component catalog under `src/components/` is the only way screens build interactive UI. The catalog is closed-API by design.
+
+**Catalog (9 components):**
+
+- `Button` — every text button. Variants: `primary`, `secondary`, `ghost`.
+- `IconButton` — icon-only 44×44 tap target.
+- `TouchableArea` — generic tappable container for cards / list rows.
+- `TextInput` — single- or multi-line text input.
+- `FormField` — label + input + inline error wrapper.
+- `Chip` — display-only pill (icon + label).
+- `ChipRow` — wrapping flex row of Chips.
+- `Card` — visual container. Variants: `standard`, `muted`.
+- `Screen` — outer wrapper with safe-area + horizontal page padding.
+
+**Rules (A+ discipline):**
+
+1. **Closed prop surfaces.** Every catalog component has a documented `Props` interface. Adding a prop requires (a) a second screen demonstrating the need, (b) TSDoc on the new prop, (c) a corresponding `theme.md` §9 update if it changes visuals.
+2. **No `style` / `containerStyle` / `textStyle` / `contentContainerStyle` prop on any catalog component.** Ever. Composition uses Rule 3 or wrapping `<View>`s.
+3. **Typed spacing-scale props added reactively.** When wrapping a catalog component in `<View style={{ marginTop: … }}>` is repeated in ≥3 screens, the component may add `marginTop?: keyof Theme['spacing']`. Raw numbers stay forbidden.
+4. **Variants are string-literal unions, not strings.** `variant: 'primary' | 'secondary' | 'ghost'`, never `variant: string`.
+5. **Screens never import `TouchableOpacity`, `Pressable`, `TextInput`, `Switch`, or `Modal` from `react-native`.** Enforced by ESLint (`no-restricted-imports`) scoped to `src/screens/**`.
+6. **Composition through children, not config.** No `extraSlot`, `rightAccessory`, or other slot-like props. Compose in JSX.
+7. **No magic defaults.** Required props have no `?`. Optional defaults are documented in TSDoc. No prop default depends on another prop.
+
+**Adding a new component:**
+
+- Demonstrate ≥2-screen need (rule of two, not rule of three — this is stricter).
+- TSDoc on every exported symbol.
+- Add a `theme.md` §9 entry annotated as "Implemented as …".
+- Test file at `__tests__/components/<Name>.test.tsx` covering every variant, every interactive prop, disabled/loading states, `accessibilityLabel`, `onPress`, light + dark theme.
+
+**Legacy footnote:** `LoginScreen.tsx`, `RegisterScreen.tsx`, and `LandingScreen.tsx` predate this rule. They use inline patterns and carry a file-top `eslint-disable no-restricted-imports` directive. They conform incrementally when touched for unrelated work. New code does not get the same grace.
 
 ### Styling
 
@@ -30,7 +66,8 @@ The full design system — color palette, semantic color roles, typography, spac
   - `src/theme/typography.ts` — font families, font sizes, font weights, text-style presets
   - `src/theme/ThemeProvider.tsx` — `useTheme()` context provider
   - `src/theme/index.ts` — re-exports for clean imports
-- Rationale: a change to a color edits exactly one file (`theme.ts`); a change to a font edits exactly one file (`typography.ts`). The split exists because colors and fonts are different concerns with different change cadences and different consumers — but each domain still has a single source of truth, in the spirit of "edit in one place." A single combined `styles/styles.ts` is **not** used in this project.
+  - `src/theme/commonStyles.ts` — `createCommonStyles(theme)` factory for shared layout fragments. Rule-of-two threshold; layout only.
+- Rationale: a change to a color edits exactly one file (`theme.ts`); a change to a font edits exactly one file (`typography.ts`). The split exists because colors and fonts are different concerns with different change cadences and different consumers — but each domain still has a single source of truth, in the spirit of "edit in one place." A single combined `styles/styles.ts` is **not** used. Shared layout fragments live in `commonStyles.ts`; catalog-component styles live inside each component file; screen-specific layout stays in the screen's local `createStyles`.
 - **No raw color hexes, font names, font sizes, spacing numbers, or border-radius numbers anywhere outside the theme files.** Components consume them via `useTheme()` and `textStyles.*`.
 
 ### Hooks
@@ -152,7 +189,9 @@ This project uses **TSDoc** for API-level documentation. This is a deliberate, s
 
 The workspace TDD rules apply in full. Project-specific extensions:
 
-- **Every component has a test suite** colocated with it (`MyComponent.tsx` + `MyComponent.test.tsx`) or under a parallel `__tests__/` folder.
+- Every component has a test under `__tests__/components/<ComponentName>.test.tsx`. Every helper has a test under `__tests__/helpers/` (or its own colocated `*.test.ts`). Screen integration tests live under `__tests__/`.
 - Every helper in `Helper/` has its own unit test file.
 - Tests use **Jest + React Native Testing Library**, written in TypeScript (`.test.tsx` / `.test.ts`).
 - A component's test suite covers, at minimum: render without crash, prop variations, user interaction (where applicable), and any conditional rendering branches. Pure styling concerns fall under the workspace visual-work carve-out and are not unit-tested.
+- **Catalog components are tested centrally and exhaustively.** A screen's test suite does NOT re-assert the visual rendering of a catalog component it uses — it asserts only the wiring (correct props passed, `onPress` invokes the right handler, conditional rendering branches). This is the testing-effort reduction that mandatory components deliver.
+- A screen that uses ONLY catalog components and `commonStyles.ts` (no local `createStyles`) requires only wiring tests. A screen with screen-specific layout still tests render-without-crash + prop variations as before.

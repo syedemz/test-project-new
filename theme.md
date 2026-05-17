@@ -16,6 +16,7 @@ These rules are non-negotiable. Before writing any UI code, the agent MUST confi
 6. **Always import from the theme** — never duplicate values. Example: `import { colors, spacing, radii } from '@/theme/theme'`.
 7. **Both light and dark mode must be supported.** Every component must read colors via the `useTheme()` hook, never directly from a hardcoded palette.
 8. **The frontend-design skill's advice on "bold maximalist or distinctive" aesthetics DOES NOT APPLY to this app.** This app's aesthetic is already defined: clean, friendly, minimalist with selective color pops. Do not deviate.
+9. **All interactive primitives are imported from `@/components`, never built ad-hoc.** A screen that needs a button uses `<Button variant="primary" />`; it does not assemble a button from `<Pressable>` and `<Text>`. See §9 for the catalog and §15 for the canonical implementation pattern.
 
 ---
 
@@ -68,6 +69,8 @@ Do not use:
 - ❌ Tailwind-style className utilities
 
 The only acceptable form of style composition at the call site is an **array of `StyleSheet` references** with optional conditional toggles, e.g. `style={[styles.button, disabled && styles.buttonDisabled]}`. This keeps every concrete style value inside a `StyleSheet.create` block and out of JSX.
+
+Shared layout fragments live in `src/theme/commonStyles.ts` as a `createCommonStyles(theme)` factory. See `codingprinciples.md` → Styling for the rule-of-two threshold.
 
 ### 1.5 If a Library You Need Is Not Listed
 
@@ -451,6 +454,8 @@ In dark mode, reduce all shadow opacities by ~50% (shadows are less visible on d
 
 These are the canonical implementations. The agent must match them.
 
+> Patterns marked **Implemented as …** below have a corresponding component under `@/components` and MUST be used by screens. Unmarked patterns are design guidance only and will be promoted to components when first used.
+
 ### 9.1 Primary Button
 
 - Background: `accent.primary`
@@ -462,11 +467,15 @@ These are the canonical implementations. The agent must match them.
 - Disabled state: background = `accent.primaryDisabled`, text remains white but at 70% opacity
 - Pressed state: opacity drops to 0.85
 
+**Implemented as `<Button variant="primary" />`. See §15.**
+
 ### 9.2 Secondary Button
 
 - Background: `accent.secondary` (mint)
 - Text color: `text.primary` (black on mint, NOT white — matches "Turn on notifications")
 - All other rules same as primary
+
+**Implemented as `<Button variant="secondary" />`.**
 
 ### 9.3 Tertiary / Ghost Button
 
@@ -474,6 +483,8 @@ These are the canonical implementations. The agent must match them.
 - Text color: `accent.primary`
 - Border: 1px solid `border.strong` (optional)
 - All other rules same as primary
+
+**Implemented as `<Button variant="ghost" />`.**
 
 ### 9.4 Input Field
 
@@ -484,6 +495,8 @@ These are the canonical implementations. The agent must match them.
 - Padding: `spacing.md` vertical, `spacing.lg` horizontal
 - Border radius: `radii.md`
 - Min height: 48px
+
+**Implemented as `<TextInput />`. Wrap with `<FormField label="…" error={…}>` for labeled inputs.**
 
 ### 9.5 Search Bar
 
@@ -497,6 +510,8 @@ These are the canonical implementations. The agent must match them.
 - Border radius: `radii.lg`
 - Min height: 64px
 - Press feedback: background tints to `bg.muted`
+
+**Implemented as `<Card variant="standard" />`. Pressable variant: `<TouchableArea><Card>…</Card></TouchableArea>`.**
 
 ### 9.7 Selectable List Row (with checkbox/radio)
 
@@ -1009,7 +1024,7 @@ export { ThemeProvider, useTheme, useThemeControls } from "./ThemeProvider";
 
 ## 15. How a Component Should Be Written (CANONICAL EXAMPLE)
 
-The agent must follow this pattern for every component. No exceptions.
+The canonical implementation pattern lives in `src/components/Button.tsx`. Read that file alongside this section for the concrete factory pattern. The example below is a reduced sketch — the real file is authoritative.
 
 ```tsx
 // src/components/PrimaryButton.tsx
@@ -1096,6 +1111,17 @@ const createStyles = (theme: Theme) =>
 ```
 
 The first is forbidden because it bypasses the design system entirely. The second and third are forbidden because they leak concrete style values into JSX — the rule is that all style objects live inside `StyleSheet.create`, with no exceptions. If you need a variant, add another key to the `createStyles` factory and reference it.
+
+### §15.1 — When to add a new component
+
+A new component is added to `src/components/` only when:
+
+1. ≥2 screens demonstrate the need (rule of two, codified in `codingprinciples.md` → Component Catalog).
+2. The proposed prop surface is closed-API per A+ Rule 2 (no `style` pass-through).
+3. A corresponding §9 entry is added or updated, annotated as "Implemented as …".
+4. Tests live at `__tests__/components/<Name>.test.tsx` and cover every variant, every interactive prop, disabled / loading states, `accessibilityLabel`, `onPress`, and light + dark theme.
+
+No "just for this screen." No "we'll generalize later." See `codingprinciples.md` → Component Catalog for the full rules.
 
 ---
 
