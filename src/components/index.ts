@@ -9,5 +9,7 @@
  * for the full catalog and §6 for the API discipline rules.
  */
 
+export { Card } from './Card';
+export type { CardProps, CardVariant } from './Card';
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
