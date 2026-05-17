@@ -21,3 +21,5 @@ export { Screen } from './Screen';
 export type { ScreenEdge, ScreenProps } from './Screen';
 export { TextInput } from './TextInput';
 export type { TextInputKeyboardType, TextInputProps } from './TextInput';
+export { TouchableArea } from './TouchableArea';
+export type { TouchableAreaProps } from './TouchableArea';
