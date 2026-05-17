@@ -17,6 +17,8 @@ export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
 export { ChipRow } from './ChipRow';
 export type { ChipRowProps } from './ChipRow';
+export { FormField } from './FormField';
+export type { FormFieldProps } from './FormField';
 export { IconButton } from './IconButton';
 export type { IconButtonProps, IconButtonTone } from './IconButton';
 export { Screen } from './Screen';
