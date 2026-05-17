@@ -15,6 +15,8 @@ export { Card } from './Card';
 export type { CardProps, CardVariant } from './Card';
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
+export { IconButton } from './IconButton';
+export type { IconButtonProps, IconButtonTone } from './IconButton';
 export { Screen } from './Screen';
 export type { ScreenEdge, ScreenProps } from './Screen';
 export { TextInput } from './TextInput';
