@@ -15,6 +15,8 @@ export { Card } from './Card';
 export type { CardProps, CardVariant } from './Card';
 export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
+export { ChipRow } from './ChipRow';
+export type { ChipRowProps } from './ChipRow';
 export { IconButton } from './IconButton';
 export type { IconButtonProps, IconButtonTone } from './IconButton';
 export { Screen } from './Screen';
