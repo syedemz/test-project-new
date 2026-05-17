@@ -9,4 +9,5 @@
  * for the full catalog and §6 for the API discipline rules.
  */
 
-export {};
+export { Chip } from './Chip';
+export type { ChipProps } from './Chip';
