@@ -9,6 +9,8 @@
  * for the full catalog and §6 for the API discipline rules.
  */
 
+export { Button } from './Button';
+export type { ButtonProps, ButtonVariant } from './Button';
 export { Card } from './Card';
 export type { CardProps, CardVariant } from './Card';
 export { Chip } from './Chip';
