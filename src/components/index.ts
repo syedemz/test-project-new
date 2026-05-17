@@ -15,3 +15,5 @@ export { Chip } from './Chip';
 export type { ChipProps } from './Chip';
 export { Screen } from './Screen';
 export type { ScreenEdge, ScreenProps } from './Screen';
+export { TextInput } from './TextInput';
+export type { TextInputKeyboardType, TextInputProps } from './TextInput';
